@@ -82,7 +82,7 @@ def main():
          if len(lsargs.paths)==0:
             lsargs.paths = ['/']
          for path in lsargs.paths:
-            listing = client.listDirectory(path)
+            listing = client.list_directory(path)
             max = 0;
             for name in sorted(listing):
                if len(name)>max:
@@ -122,7 +122,7 @@ def main():
                sys.stdout.buffer.write(chunk)
       elif args.command[0]=='mkdir':
          for path in args.command[1:]:
-            if not client.mkdir(path):
+            if not client.make_directory(path):
                sys.stderr.write('mkdir failed: {}\n'.format(path))
                sys.exit(1)
 
@@ -146,7 +146,7 @@ def main():
             help='a list of paths')
          rmargs = rmparser.parse_args(args.command[1:])
          for path in rmargs.paths:
-            if not client.rm(path,recursive=rmargs.recursive):
+            if not client.remove(path,recursive=rmargs.recursive):
                sys.stderr.write('Cannot remove: {}\n'.format(path))
                sys.exit(1)
       elif args.command[0]=='cp':
@@ -174,7 +174,7 @@ def main():
             else:
                path = path + '/' + cpargs.paths[0]
          with open(cpargs.paths[0],'rb') as input:
-            if not client.cp(input,path,size=size,overwrite=cpargs.force):
+            if not client.copy(input,path,size=size,overwrite=cpargs.force):
                sys.stderr.write('Move failed.\n')
                sys.exit(1)
       else:

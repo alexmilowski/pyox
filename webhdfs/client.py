@@ -26,7 +26,7 @@ class Client:
       else:
          return '{}://{}:{}/gateway/{}/webhdfs/v1'.format(protocol,self.host,self.port,self.gateway)
 
-   def listDirectory(self,path):
+   def list_directory(self,path):
       path = absolute_path(path)
       url = '{}{}?op=LISTSTATUS'.format(self.service_url(),path)
       #print(url)
@@ -50,7 +50,7 @@ class Client:
       else:
          raise self._exception(open_req.status_code,'Cannot open path {}'.format(path))
 
-   def mkdir(self,path):
+   def make_directory(self,path):
       path = absolute_path(path)
       url = '{}{}?op=MKDIRS'.format(self.service_url(),path)
       #print(url)
@@ -60,7 +60,7 @@ class Client:
       msg = req.json()
       return msg['boolean']
 
-   def mv(self,sourcepath,destpath):
+   def move(self,sourcepath,destpath):
       sourcepath = absolute_path(sourcepath)
       destpath = absolute_path(destpath)
       url = '{}{}?op=RENAME&destination={}'.format(self.service_url(),sourcepath,destpath)
@@ -71,7 +71,7 @@ class Client:
       msg = req.json()
       return msg['boolean']
 
-   def rm(self,path,recursive=False):
+   def remove(self,path,recursive=False):
       path = absolute_path(path)
       recursiveParam = 'true' if recursive else 'false'
       url = '{}{}?op=DELETE&recursive={}'.format(self.service_url(),path,recursiveParam)
@@ -82,7 +82,7 @@ class Client:
       msg = req.json()
       return msg['boolean']
 
-   def cp(self,data,path,size=-1,overwrite=False):
+   def copy(self,data,path,size=-1,overwrite=False):
       path = absolute_path(path)
       overwriteParam = 'true' if overwrite else 'false'
       url = '{}{}?op=CREATE&overwrite={}'.format(self.service_url(),path,overwrite)
