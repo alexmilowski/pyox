@@ -1,4 +1,6 @@
 
+from .client import Client
+
 import requests
 
 def absolute_path(path):
@@ -6,25 +8,10 @@ def absolute_path(path):
       path = '/'+path
    return path
 
-class WebHDFS:
+class WebHDFS(Client):
 
    def __init__(self,base=None,secure=False,host='localhost',port=50070,gateway=None,username=None,password=None):
-      self.base = base
-      self.secure = secure
-      self.host = host
-      self.port = port
-      self.gateway = gateway
-      self.username = username
-      self.password = password
-
-   def service_url(self):
-      if self.base is not None:
-         return self.base+'webhdfs/v1' if self.base[-1]=='/' else self.base+'/webhdfs/v1'
-      protocol = 'https' if self.secure else 'http'
-      if self.gateway is None:
-         return '{}://{}:{}/webhdfs/v1'.format(protocol,self.host,self.port)
-      else:
-         return '{}://{}:{}/gateway/{}/webhdfs/v1'.format(protocol,self.host,self.port,self.gateway)
+      super().__init__(service='webhdfs/v1',base=base,secure=secure,host=host,port=port,gateway=gateway,username=username,password=password)
 
    def list_directory(self,path):
       path = absolute_path(path)
