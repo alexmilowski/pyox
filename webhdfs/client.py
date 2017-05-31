@@ -85,18 +85,27 @@ class Client:
    def copy(self,data,path,size=-1,overwrite=False):
       path = absolute_path(path)
       overwriteParam = 'true' if overwrite else 'false'
-      url = '{}{}?op=CREATE&overwrite={}'.format(self.service_url(),path,overwrite)
+      url = '{}{}?op=CREATE&overwrite={}'.format(self.service_url(),path,overwriteParam)
       #print(url)
       headers = {}
       headers['Content-Type'] = 'application/octet-stream'
       if size >= 0:
          headers['Content-Length'] = str(size)
-      req = requests.put(
+      open_req = requests.put(
          url,auth=(self.username,self.password) if self.username is not None else None,
-         data=data,
-         headers=headers)
-      if req.status_code!=201:
-         raise self._exception(req.status_code,'Cannot cp to path {}'.format(path))
+         allow_redirects=False,
+         headers={'Content-Length' : '0'})
+      if open_req.status_code==307:
+         location = open_req.headers['Location'];
+         print(location)
+         req = requests.put(
+            location,auth=(self.username,self.password) if self.username is not None else None,
+            data=data,
+            headers=headers)
+         if req.status_code!=201:
+            raise self._exception(req.status_code,'Cannot copy to path {}'.format(path))
+      else:
+         raise self._exception(req.status_code,'Cannot open path {}'.format(path))
       return True
 
 
