@@ -94,13 +94,3 @@ class WebHDFS(Client):
       else:
          raise self._exception(req.status_code,'Cannot open path {}'.format(path))
       return True
-
-
-   def _exception(self,status,message):
-      error = None;
-      if status==401:
-         error = PermissionError(message)
-      else:
-         error = IOError(message)
-      error.status = status
-      return error;

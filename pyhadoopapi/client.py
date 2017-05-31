@@ -24,3 +24,12 @@ class Client:
 
    def auth(self):
       return (self.username,self.password) if self.username is not None else None
+
+   def _exception(self,status,message):
+      error = None;
+      if status==401:
+         error = PermissionError(message)
+      else:
+         error = IOError(message)
+      error.status = status
+      return error;
