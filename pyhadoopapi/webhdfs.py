@@ -6,7 +6,7 @@ def absolute_path(path):
       path = '/'+path
    return path
 
-class Client:
+class WebHDFS:
 
    def __init__(self,base=None,secure=False,host='localhost',port=50070,gateway=None,username=None,password=None):
       self.base = base

@@ -1,2 +1,2 @@
-from .client import Client
-__all__ = [ 'Client']
+from .webhdfs import WebHDFS
+__all__ = [ 'WebHDFS']

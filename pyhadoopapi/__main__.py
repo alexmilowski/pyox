@@ -1,4 +1,4 @@
-from .client import Client
+from .webhdfs import WebHDFS
 from datetime import datetime
 import argparse
 import sys
@@ -23,7 +23,7 @@ class tracker:
    def add(self,value):
       self.values.add(value)
 
-def main():
+def hdfs_command(command_args):
    parser = argparse.ArgumentParser(description="WebHDFS Client")
 
    parser.add_argument(
@@ -61,14 +61,17 @@ def main():
 #      'args',
 #      nargs='*',
 #      help='The command arguments')
-   args = parser.parse_args()
+   args = parser.parse_args(command_args)
 
    user = parseAuth(args.auth)
-   client = Client(base=args.base,username=user[0],password=user[1]) if args.base is not None else \
-            Client(secure=args.secure,host=args.host,port=args.port,gateway=args.gateway,username=user[0],password=user[1])
+   client = WebHDFS(base=args.base,username=user[0],password=user[1]) if args.base is not None else \
+            WebHDFS(secure=args.secure,host=args.host,port=args.port,gateway=args.gateway,username=user[0],password=user[1])
 
    try:
-      if args.command[0]=='ls':
+      if len(args.command)==0:
+         sys.stderr.write('Missing command\n')
+         sys.exit(1)
+      elif args.command[0]=='ls':
          lsparser = argparse.ArgumentParser(description="ls")
          lsparser.add_argument(
             '-b',
@@ -265,6 +268,29 @@ def main():
          sys.exit(1)
 
    sys.exit(0)
+
+commands = {
+   'hdfs' : hdfs_command
+}
+
+def usage():
+   sys.stderr.write('One of the commands must be specified:')
+   for command in commands:
+      sys.stderr.write(' ')
+      sys.stderr.write(command)
+   sys.stderr.write('\n')
+
+def main():
+   if len(sys.argv)==1:
+      usage()
+      sys.exit(1)
+
+   func = commands.get(sys.argv[1])
+   if func is None:
+      sys.stderr.write('Unrecognized command: {}\n'.format(sys.argv[1]))
+      sys.exit(1)
+
+   func(sys.argv[2:])
 
 if __name__ == '__main__':
    main()
