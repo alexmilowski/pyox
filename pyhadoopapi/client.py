@@ -21,3 +21,6 @@ class Client:
          return '{}://{}:{}/{}'.format(protocol,self.host,self.port,self.service)
       else:
          return '{}://{}:{}/gateway/{}/{}'.format(protocol,self.host,self.port,self.gateway,self.service)
+
+   def auth(self):
+      return (self.username,self.password) if self.username is not None else None
