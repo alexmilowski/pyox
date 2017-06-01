@@ -84,7 +84,7 @@ class WebHDFS(Client):
          headers={'Content-Length' : '0'})
       if open_req.status_code==307:
          location = open_req.headers['Location'];
-         print(location)
+         #print(location)
          req = requests.put(
             location,auth=self.auth(),
             data=data,
