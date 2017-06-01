@@ -7,8 +7,8 @@ class Client:
       if self.base is not None and self.base[-1]!='/':
          self.base = self.base + '/'
       self.secure = secure
-      self.host = host
-      self.port = port
+      self.host = host if host is not None else 'localhost'
+      self.port = port if port is not None else 50070
       self.gateway = gateway
       self.username = username
       self.password = password
