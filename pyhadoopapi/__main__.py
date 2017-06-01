@@ -1,4 +1,5 @@
 from .webhdfs import WebHDFS
+from .oozie import Oozie
 from datetime import datetime
 import argparse
 import sys
@@ -269,8 +270,110 @@ def hdfs_command(command_args):
 
    sys.exit(0)
 
+def oozie_command(command_args):
+   parser = argparse.ArgumentParser(description="Oozie Client")
+
+   parser.add_argument(
+        '--base',
+        nargs="?",
+        help="The base URI of the service")
+   parser.add_argument(
+        '--host',
+        nargs="?",
+        default='localhost',
+        help="The host of the service (may include port)")
+   parser.add_argument(
+        '--port',
+        nargs="?",
+        default=50070,
+        help="The port of the service")
+   parser.add_argument(
+        '--secure',
+        action='store_true',
+        default=False,
+        help="The port of the service")
+   parser.add_argument(
+        '--gateway',
+        nargs="?",
+        help="The KNOX gateway name")
+   parser.add_argument(
+      '--auth',
+       help="The authentication for the request (colon separated username/password)")
+   parser.add_argument(
+        '--namenode',
+        nargs="?",
+        default='sandbox',
+        help="The name node for jobs")
+   parser.add_argument(
+        '--tracker',
+        nargs="?",
+        help="The job tracker for jobs")
+
+   parser.add_argument(
+      'command',
+      nargs=argparse.REMAINDER,
+      help='The command')
+   args = parser.parse_args(command_args)
+
+   user = parseAuth(args.auth)
+   client = Oozie(base=args.base,username=user[0],password=user[1],tracker=args.tracker,namenode=args.namenode) if args.base is not None else \
+            Oozie(secure=args.secure,host=args.host,port=args.port,gateway=args.gateway,username=user[0],password=user[1],tracker=args.tracker,namenode=args.namenode)
+
+   try:
+      if len(args.command)==0:
+         sys.stderr.write('Missing command\n')
+         sys.exit(1)
+      elif args.command[0]=='start':
+         cmdparser = argparse.ArgumentParser(description='start')
+         cmdparser.add_argument(
+            '-p','--property',
+            nargs="*",
+            help="A property name/value pair (e.g., name=value)")
+         cmdparser.add_argument(
+            '-d','--definition',
+            nargs="?",
+            help="The workflow definition to copy")
+         cmdparser.add_argument(
+            '-cp','--copy',
+            nargs="*",
+            help="A resource to copy (e.g., source or source=dest)")
+         cmdparser.add_argument(
+           '--namenode',
+           nargs="?",
+           default='sandbox',
+           help="The name node for the job")
+         cmdparser.add_argument(
+            '-v',
+            action='store_true',
+            dest='verbose',
+            default=False,
+            help="Verbose")
+         cmdparser.add_argument(
+            'path',
+            help='The job path')
+         cmdargs = cmdparser.parse_args(args.command[1:])
+   except PermissionError as err:
+      sys.stderr.write('Unauthorized\n');
+      sys.exit(error.status)
+   except IOError as err:
+      sys.stderr.write(str(err)+'\n')
+      if hasattr(err,'status'):
+         if err.status==403:
+            sys.stderr.write('Forbidden!\n')
+         elif err.status==404:
+            sys.stderr.write('Not found!\n')
+         else:
+            sys.stderr.write('status {}\n'.format(err.status))
+         sys.exit(err.status)
+      else:
+         sys.exit(1)
+
+   sys.exit(0)
+
+
 commands = {
-   'hdfs' : hdfs_command
+   'hdfs' : hdfs_command,
+   'oozie' : oozie_command
 }
 
 def usage():
