@@ -13,14 +13,14 @@ class Client:
       self.username = username
       self.password = password
 
-   def service_url(self):
+   def service_url(self,version='v1'):
       if self.base is not None:
          return self.base + service
       protocol = 'https' if self.secure else 'http'
       if self.gateway is None:
-         return '{}://{}:{}/{}'.format(protocol,self.host,self.port,self.service)
+         return '{}://{}:{}/{}/{}'.format(protocol,self.host,self.port,self.service,version)
       else:
-         return '{}://{}:{}/gateway/{}/{}'.format(protocol,self.host,self.port,self.gateway,self.service)
+         return '{}://{}:{}/gateway/{}/{}/{}'.format(protocol,self.host,self.port,self.gateway,self.service,version)
 
    def auth(self):
       return (self.username,self.password) if self.username is not None else None
