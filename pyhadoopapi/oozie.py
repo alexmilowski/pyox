@@ -65,7 +65,7 @@ class Job:
 class Oozie(Client):
 
    def __init__(self,base=None,secure=False,host='localhost',port=50070,gateway=None,username=None,password=None,namenode='sandbox',tracker=None):
-      super().__init__(service='oozie/v1',base=base,secure=secure,host=host,port=port,gateway=gateway,username=username,password=password)
+      super().__init__(service='oozie',base=base,secure=secure,host=host,port=port,gateway=gateway,username=username,password=password)
       self.webhdfs = WebHDFS(base=base,secure=secure,host=host,port=port,gateway=gateway,username=username,password=password)
       self.properties = {}
       self.defaultNamenode = namenode
@@ -104,6 +104,21 @@ class Oozie(Client):
          url,
          auth=self.auth())
       #print(req.status_code)
+      if req.status_code==200:
+         msg = req.json()
+         return (req.status_code,msg)
+      else:
+         return (req.status_code,req.text)
+
+   def list_jobs(self,status=None,offset=1,count=50):
+      if status is None:
+         url = '{}/jobs?offset={}&len={}'.format(self.service_url(version='v2'),offset,count)
+      else:
+         url = '{}/jobs?offset={}&len={}&filter=status%3D{}'.format(self.service_url(version='v2'),offset,count,status)
+      print(url)
+      req = requests.get(
+         url,
+         auth=self.auth())
       if req.status_code==200:
          msg = req.json()
          return (req.status_code,msg)

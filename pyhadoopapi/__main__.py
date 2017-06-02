@@ -427,9 +427,71 @@ def oozie_status_command(client,argv):
                for action in actions:
                   print('{}\t{}\t{}\t{}'.format(action.get('id'),action.get('status'),action.get('errorCode'),action.get('errorMessage')))
 
+def oozie_ls_command(client,argv):
+   cmdparser = argparse.ArgumentParser(prog='pyhadoopapi oozie status',description='job status')
+   cmdparser.add_argument(
+      '-a',
+      action='store_true',
+      dest='all',
+      default=False,
+      help="show all")
+   cmdparser.add_argument(
+      '-l',
+      action='store_true',
+      dest='detailed',
+      default=False,
+      help="list details")
+   cmdparser.add_argument(
+      '-s','--status',
+      dest='status',
+      nargs='?',
+      default='RUNNING',
+      help="filter by status")
+   cmdparser.add_argument(
+      '-o','--offset',
+      nargs='?',
+      dest='offset',
+      type=int,
+      default=1,
+      metavar=('offset'),
+      help="The offset at which to start")
+   cmdparser.add_argument(
+      '-n','--count',
+      nargs='?',
+      type=int,
+      default=50,
+      dest='count',
+      metavar=('count'),
+      help="The number of items to return")
+   args = cmdparser.parse_args(argv)
+
+   if args.all:
+      msg = client.list_jobs(offset=args.offset,count=args.count)
+   else:
+      msg = client.list_jobs(offset=args.offset,count=args.count,status=args.status)
+   if msg[0]==200:
+      if args.detailed:
+         print('\t'.join(['ID','STATUS','NAME','USER','START','END']))
+         for job in msg[1]['workflows']:
+            id = job['id']
+            user = job['user']
+            status = job['status']
+            appName = job['appName']
+            startTime = job['startTime']
+            endTime = job['endTime']
+            print('\t'.join(map(lambda x:str(x) if x is not None else '',[id,status,appName,user,startTime,endTime])))
+      else:
+         for job in msg[1]['workflows']:
+            id = job['id']
+            print(id)
+   else:
+      sys.stderr.write('Failed to get status, {}'.format(msg[0]))
+
+
 oozie_commands = {
    'start' : oozie_start_command,
-   'status' : oozie_status_command
+   'status' : oozie_status_command,
+   'ls' : oozie_ls_command
 }
 
 def oozie_command(args):
