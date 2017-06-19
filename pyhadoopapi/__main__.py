@@ -361,7 +361,7 @@ def oozie_start_command(client,argv):
 def oozie_status_command(client,argv):
    cmdparser = argparse.ArgumentParser(prog='pyhadoopapi oozie status',description='job status')
    cmdparser.add_argument(
-      '-raw',
+      '-r','--raw',
       action='store_true',
       dest='raw',
       default=False,
@@ -372,6 +372,12 @@ def oozie_status_command(client,argv):
       dest='actions',
       default=False,
       help="show error messages")
+   cmdparser.add_argument(
+      '-s','--show',
+      dest='show',
+      nargs='?',
+      default='info',
+      help="The information about the job to retrieve.")
    cmdparser.add_argument(
       '-l',
       action='store_true',
@@ -387,11 +393,12 @@ def oozie_status_command(client,argv):
       print('\t'.join(['JOB','STATUS','USER','PATH','START','END','CODE','MESSAGE']))
 
    for jobid in args.jobids:
-      response = client.status(jobid)
+      response = client.status(jobid,show=args.show)
+      #print(response)
       if response[0]==404:
          if args.raw:
             sys.stdout.write('\n')
-            sys.stdout.write('{"id":"{}","status":{}}'.format(jobid,response[0]))
+            sys.stdout.write('{{"id":"{}","status":{}}}'.format(jobid,response[0]))
             sys.stdout.write('\x1e')
          else:
             print('{}\tNOT FOUND'.format(jobid))
@@ -399,30 +406,37 @@ def oozie_status_command(client,argv):
       elif response[0]!=200:
          if args.raw:
             sys.stdout.write('\n')
-            sys.stdout.write('{"id":"{}","status":{}}'.format(jobid,response[0]))
+            sys.stdout.write('{{"id":"{}","status":{}}}'.format(jobid,response[0]))
             sys.stdout.write('\x1e')
          else:
             print('{}\tERROR {}'.format(jobid,response[0]))
       else:
-         startTime = response[1].get('startTime')
-         endTime = response[1].get('endTime')
-         lastModTime = response[1].get('lastModTime')
-         createdTime = response[1].get('createdTime')
-         appPath = response[1].get('appPath')
-         status = response[1].get('status')
-         actions = response[1].get('actions')
-         user = response[1].get('user')
-         if args.raw:
-            sys.stdout.write('\n')
-            sys.stdout.write(json.dumps(response[1]))
-            sys.stdout.write('\x1e')
+         if args.raw or type(response[1])==str:
+            if type(response[1])==str:
+               sys.stdout.write(response[1])
+            elif type(response[1])==bytes:
+               sys.stdout.buffer.write(response[1])
+            else:
+               sys.stdout.write('\n')
+               sys.stdout.write(json.dumps(response[1]))
+               sys.stdout.write('\x1e')
          elif args.detailed:
+            startTime = response[1].get('startTime')
+            endTime = response[1].get('endTime')
+            lastModTime = response[1].get('lastModTime')
+            createdTime = response[1].get('createdTime')
+            appPath = response[1].get('appPath')
+            status = response[1].get('status')
+            actions = response[1].get('actions')
+            user = response[1].get('user')
             print('\t'.join(map(lambda x:str(x),[jobid,status,user,appPath,startTime,endTime])))
             if args.actions and actions is not None:
                for action in actions:
                   print('\t'.join(map(lambda x:str(x) if x is not None else '',[action.get('id'),action.get('status'),user,action.get('name'),action.get('startTime'),action.get('endTime'),action.get('errorCode'),action.get('errorMessage')])))
          else:
+            status = response[1].get('status')
             print('{}\t{}'.format(jobid,status))
+            actions = response[1].get('actions')
             if args.actions and actions is not None:
                for action in actions:
                   print('{}\t{}\t{}\t{}'.format(action.get('id'),action.get('status'),action.get('errorCode'),action.get('errorMessage')))

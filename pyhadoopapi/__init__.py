@@ -1,3 +1,4 @@
 from .webhdfs import WebHDFS
-__all__ = [ 'WebHDFS']
-__version__ = '0.1.0'
+from .oozie import Oozie,Job
+__all__ = [ 'WebHDFS','Oozie','Job']
+__version__ = '0.2.0'

@@ -7,6 +7,7 @@ import sys
 JOB_TRACKER = 'jobTracker'
 NAMENODE = 'nameNode'
 OOZIE_APP_PATH = 'oozie.wf.application.path'
+_jsonType = 'application/json'
 
 def write_property(xml,name,value):
    xml.write('<property>\n')
@@ -97,20 +98,21 @@ class Oozie(Client):
       else:
          self._exception(req.status_code,'Cannot start job.')
 
-   def status(self,jobid):
-      url = '{}/job/{}'.format(self.service_url(),jobid)
+   def status(self,jobid,show='info'):
+      url = '{}/job/{}?show={}'.format(self.service_url(version='v2'),jobid,show)
       #print(url)
       req = requests.get(
          url,
          auth=self.auth())
-      #print(req.status_code)
-      if req.status_code==200:
-         msg = req.json()
-         return (req.status_code,msg)
+      if req.headers['Content-Type'][0:len(_jsonType)]==_jsonType:
+         data = req.json()
+      elif req.headers['Content-Type'][0:5]=='image':
+         data = req.content
       else:
-         return (req.status_code,req.text)
+         data = req.text
+      return (req.status_code,data)
 
-   def list_jobs(self,status=None,offset=1,count=50):
+   def list_jobs(self,status=None,offset=0,count=50):
       if status is None:
          url = '{}/jobs?offset={}&len={}'.format(self.service_url(version='v2'),offset,count)
       else:
