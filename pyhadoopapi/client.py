@@ -1,3 +1,8 @@
+import requests
+
+from requests.packages.urllib3.exceptions import InsecureRequestWarning
+
+requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
 
 class Client:
 
@@ -12,10 +17,15 @@ class Client:
       self.gateway = gateway
       self.username = username
       self.password = password
+      self.proxies = None
+      self.verify = True
 
    def service_url(self,version='v1'):
       if self.base is not None:
-         return self.base + service
+         if self.gateway is None:
+            return '{}{}/{}'.format(self.base,self.service,version)
+         else:
+            return '{}gateway/{}/{}/{}'.format(self.base,self.gateway,self.service,version)
       protocol = 'https' if self.secure else 'http'
       if self.gateway is None:
          return '{}://{}:{}/{}/{}'.format(protocol,self.host,self.port,self.service,version)
@@ -24,6 +34,41 @@ class Client:
 
    def auth(self):
       return (self.username,self.password) if self.username is not None else None
+
+   def post(self,url,data=None,headers=None):
+      return requests.post(
+         url,
+         auth=self.auth(),
+         data=data,
+         headers=headers,
+         proxies=self.proxies,
+         verify=self.verify)
+
+   def put(self,url,data=None,headers=None,allow_redirects=True):
+      return requests.put(
+         url,
+         auth=self.auth(),
+         data=data,
+         headers=headers,
+         allow_redirects=allow_redirects,
+         proxies=self.proxies,
+         verify=self.verify)
+
+   def get(self,url,params={},allow_redirects=True):
+      return requests.get(
+         url,
+         params=params,
+         auth=self.auth(),
+         allow_redirects=allow_redirects,
+         proxies=self.proxies,
+         verify=self.verify)
+
+   def delete(self,url):
+      return requests.delete(
+         url,
+         auth=self.auth(),
+         proxies=self.proxies,
+         verify=self.verify)
 
    def _exception(self,status,message):
       error = None;

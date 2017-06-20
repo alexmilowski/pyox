@@ -181,6 +181,8 @@ def hdfs_cp_command(client,argv):
             slash = source.rfind('/')
             if source[0]=='/':
                targetpath = source[slash+1:]
+            elif source[0:3]=='../':
+               targetpath = source[slash+1:]
             elif slash > 0 :
                dirpath = source[0:slash]
                if dirpath not in mkdirs.values:
@@ -195,7 +197,7 @@ def hdfs_cp_command(client,argv):
             target = destpath + targetpath
 
             if cpargs.verbose:
-               sys.stderr.write(source+'\n')
+               sys.stderr.write(source+' → '+target+'\n')
             with open(source,'rb') as input:
                def chunker():
                   sent =0
@@ -237,8 +239,9 @@ def hdfs_command(args):
 
    user = parseAuth(args.auth)
    hostinfo = parseHost(args.host)
-   client = WebHDFS(base=args.base,username=user[0],password=user[1]) if args.base is not None else \
-            WebHDFS(secure=args.secure,host=hostinfo[0],port=hostinfo[1],gateway=args.gateway,username=user[0],password=user[1])
+   client = WebHDFS(secure=args.secure,host=hostinfo[0],port=hostinfo[1],gateway=args.gateway,base=args.base,username=user[0],password=user[1])
+   client.proxies = args.proxies
+   client.verify = args.verify
 
    try:
       if len(args.command)==0:
@@ -512,8 +515,9 @@ def oozie_command(args):
 
    user = parseAuth(args.auth)
    hostinfo = parseHost(args.host)
-   client = Oozie(base=args.base,username=user[0],password=user[1]) if args.base is not None else \
-            Oozie(secure=args.secure,host=hostinfo[0],port=hostinfo[1],gateway=args.gateway,username=user[0],password=user[1])
+   client = Oozie(base=args.base,secure=args.secure,host=hostinfo[0],port=hostinfo[1],gateway=args.gateway,username=user[0],password=user[1])
+   client.proxies = args.proxies
+   client.verify = args.verify
 
    try:
       if len(args.command)==0:
@@ -573,6 +577,20 @@ def main():
    parser.add_argument(
       '--auth',
        help="The authentication for the request (colon separated username/password)")
+   parser.add_argument(
+      '-p','--proxy',
+      dest='proxies',
+      action='append',
+      metavar=('protocol','url'),
+      nargs=2,
+      help="A protocol proxy")
+
+   parser.add_argument(
+      '--no-verify',
+      dest='verify',
+      action='store_false',
+      default=True,
+      help="Do not verify SSL certificates")
 
    parser.add_argument(
       'command',
@@ -580,6 +598,14 @@ def main():
       help='The command')
 
    args = parser.parse_args()
+
+   if args.proxies is not None:
+      pdict = {}
+      for pdef in args.proxies:
+         pdict[pdef[0]] = pdef[1]
+      args.proxies = pdict
+
+   #print(args)
 
    if len(args.command)==0:
       usage(commands)

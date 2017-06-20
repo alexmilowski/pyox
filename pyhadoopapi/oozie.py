@@ -1,6 +1,5 @@
 from .client import Client
 from .webhdfs import WebHDFS
-import requests
 from io import StringIO
 import sys
 
@@ -86,11 +85,7 @@ class Oozie(Client):
       headers = {'Content-Type' : 'application/xml; charset=UTF-8'}
       url = '{}/jobs?action=start'.format(self.service_url())
       #print(url)
-      req = requests.post(
-         url,
-         auth=self.auth(),
-         data=xml,
-         headers=headers)
+      req = self.post(url,data=xml,headers=headers)
       #print(req.status_code)
       if req.status_code==201:
          msg = req.json()
@@ -101,9 +96,7 @@ class Oozie(Client):
    def status(self,jobid,show='info'):
       url = '{}/job/{}?show={}'.format(self.service_url(version='v2'),jobid,show)
       #print(url)
-      req = requests.get(
-         url,
-         auth=self.auth())
+      req = self.get(url)
       if req.headers['Content-Type'][0:len(_jsonType)]==_jsonType:
          data = req.json()
       elif req.headers['Content-Type'][0:5]=='image':
@@ -118,9 +111,7 @@ class Oozie(Client):
       else:
          url = '{}/jobs?offset={}&len={}&filter=status%3D{}'.format(self.service_url(version='v2'),offset,count,status)
       print(url)
-      req = requests.get(
-         url,
-         auth=self.auth())
+      req = self.get(url)
       if req.status_code==200:
          msg = req.json()
          return (req.status_code,msg)
