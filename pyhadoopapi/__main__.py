@@ -255,7 +255,7 @@ def hdfs_command(args):
       func(client,args.command[1:])
    except PermissionError as err:
       sys.stderr.write('Unauthorized\n');
-      sys.exit(error.status)
+      sys.exit(err.status)
    except IOError as err:
       sys.stderr.write(str(err)+'\n')
       if hasattr(err,'status'):
@@ -531,7 +531,7 @@ def oozie_command(args):
       func(client,args.command[1:])
    except PermissionError as err:
       sys.stderr.write('Unauthorized\n');
-      sys.exit(error.status)
+      sys.exit(err.status)
    except IOError as err:
       sys.stderr.write(str(err)+'\n')
       if hasattr(err,'status'):
