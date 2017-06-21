@@ -83,20 +83,23 @@ class Oozie(Client):
 
    def start(self,xml):
       headers = {'Content-Type' : 'application/xml; charset=UTF-8'}
-      url = '{}/jobs?action=start'.format(self.service_url())
+      url = '{}/jobs'.format(self.service_url())
       #print(url)
-      req = self.post(url,data=xml,headers=headers)
+      req = self.post(url,params={'action':'start'},data=xml,headers=headers)
+      #print(req.url)
       #print(req.status_code)
       if req.status_code==201:
          msg = req.json()
+         #print(msg)
          return msg['id']
       else:
-         self._exception(req.status_code,'Cannot start job.')
+         #print(req.text)
+         raise self._exception(req.status_code,'Cannot start job.')
 
    def status(self,jobid,show='info'):
-      url = '{}/job/{}?show={}'.format(self.service_url(version='v2'),jobid,show)
+      url = '{}/job/{}'.format(self.service_url(version='v2'),jobid)
       #print(url)
-      req = self.get(url)
+      req = self.get(url,params={'show':show})
       if req.headers['Content-Type'][0:len(_jsonType)]==_jsonType:
          data = req.json()
       elif req.headers['Content-Type'][0:5]=='image':
@@ -106,12 +109,19 @@ class Oozie(Client):
       return (req.status_code,data)
 
    def list_jobs(self,status=None,offset=0,count=50):
-      if status is None:
-         url = '{}/jobs?offset={}&len={}'.format(self.service_url(version='v2'),offset,count)
-      else:
-         url = '{}/jobs?offset={}&len={}&filter=status%3D{}'.format(self.service_url(version='v2'),offset,count,status)
-      print(url)
-      req = self.get(url)
+      url = '{}/jobs'.format(self.service_url(version='v2'))
+      #if status is None:
+      #   url = '{}/jobs?offset={}&len={}'.format(self.service_url(version='v2'),offset,count)
+      #else:
+      #   url = '{}/jobs?offset={}&len={}&filter=status%3D{}'.format(self.service_url(version='v2'),offset,count,status)
+      #print(url)
+      params = {
+         'offset' : str(offset),
+         'len' : str(count)
+      }
+      if statis is not None:
+         params['filter'] = 'status%3D'+str(status)
+      req = self.get(url,params=params)
       if req.status_code==200:
          msg = req.json()
          return (req.status_code,msg)

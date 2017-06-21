@@ -35,18 +35,20 @@ class Client:
    def auth(self):
       return (self.username,self.password) if self.username is not None else None
 
-   def post(self,url,data=None,headers=None):
+   def post(self,url,params={},data=None,headers=None):
       return requests.post(
          url,
+         params=params,
          auth=self.auth(),
          data=data,
          headers=headers,
          proxies=self.proxies,
          verify=self.verify)
 
-   def put(self,url,data=None,headers=None,allow_redirects=True):
+   def put(self,url,params={},data=None,headers=None,allow_redirects=True):
       return requests.put(
          url,
+         params=params,
          auth=self.auth(),
          data=data,
          headers=headers,
@@ -63,9 +65,10 @@ class Client:
          proxies=self.proxies,
          verify=self.verify)
 
-   def delete(self,url):
+   def delete(self,url,params={}):
       return requests.delete(
          url,
+         params=params,
          auth=self.auth(),
          proxies=self.proxies,
          verify=self.verify)
