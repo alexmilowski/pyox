@@ -84,10 +84,8 @@ class Oozie(Client):
    def start(self,xml):
       headers = {'Content-Type' : 'application/xml; charset=UTF-8'}
       url = '{}/jobs'.format(self.service_url())
-      #print(url)
       req = self.post(url,params={'action':'start'},data=xml,headers=headers)
       #print(req.url)
-      #print(req.status_code)
       if req.status_code==201:
          msg = req.json()
          #print(msg)
@@ -98,8 +96,8 @@ class Oozie(Client):
 
    def status(self,jobid,show='info'):
       url = '{}/job/{}'.format(self.service_url(version='v2'),jobid)
-      #print(url)
       req = self.get(url,params={'show':show})
+      #print(req.url)
       if req.headers['Content-Type'][0:len(_jsonType)]==_jsonType:
          data = req.json()
       elif req.headers['Content-Type'][0:5]=='image':
@@ -110,18 +108,14 @@ class Oozie(Client):
 
    def list_jobs(self,status=None,offset=0,count=50):
       url = '{}/jobs'.format(self.service_url(version='v2'))
-      #if status is None:
-      #   url = '{}/jobs?offset={}&len={}'.format(self.service_url(version='v2'),offset,count)
-      #else:
-      #   url = '{}/jobs?offset={}&len={}&filter=status%3D{}'.format(self.service_url(version='v2'),offset,count,status)
-      #print(url)
       params = {
          'offset' : str(offset),
          'len' : str(count)
       }
       if status is not None:
-         params['filter'] = 'status%3D'+str(status)
+         params['filter'] = 'status='+str(status)
       req = self.get(url,params=params)
+      #print(req.url)
       if req.status_code==200:
          msg = req.json()
          return (req.status_code,msg)

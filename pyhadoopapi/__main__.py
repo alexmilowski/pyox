@@ -6,6 +6,8 @@ import sys
 import os
 import json
 from glob import glob
+import requests
+import logging
 
 def parseAuth(value):
    if value is None or len(value)==0:
@@ -242,6 +244,8 @@ def hdfs_command(args):
    client = WebHDFS(secure=args.secure,host=hostinfo[0],port=hostinfo[1],gateway=args.gateway,base=args.base,username=user[0],password=user[1])
    client.proxies = args.proxies
    client.verify = args.verify
+   if args.verbose:
+      client.enable_verbose()
 
    try:
       if len(args.command)==0:
@@ -469,7 +473,7 @@ def oozie_ls_command(client,argv):
       nargs='?',
       dest='offset',
       type=int,
-      default=1,
+      default=0,
       metavar=('offset'),
       help="The offset at which to start")
    cmdparser.add_argument(
@@ -502,7 +506,7 @@ def oozie_ls_command(client,argv):
             id = job['id']
             print(id)
    else:
-      sys.stderr.write('Failed to get status, {}'.format(msg[0]))
+      sys.stderr.write('Failed to get status, {}\n'.format(msg[0]))
 
 
 oozie_commands = {
@@ -518,6 +522,8 @@ def oozie_command(args):
    client = Oozie(base=args.base,secure=args.secure,host=hostinfo[0],port=hostinfo[1],gateway=args.gateway,username=user[0],password=user[1])
    client.proxies = args.proxies
    client.verify = args.verify
+   if args.verbose:
+      client.enable_verbose()
 
    try:
       if len(args.command)==0:
@@ -584,13 +590,18 @@ def main():
       metavar=('protocol','url'),
       nargs=2,
       help="A protocol proxy")
-
    parser.add_argument(
       '--no-verify',
       dest='verify',
       action='store_false',
       default=True,
       help="Do not verify SSL certificates")
+   parser.add_argument(
+      '-v','--verbose',
+      dest='verbose',
+      action='store_true',
+      default=False,
+      help="Output detailed information about the request and response")
 
    parser.add_argument(
       'command',
