@@ -119,7 +119,7 @@ class Oozie(Client):
          'offset' : str(offset),
          'len' : str(count)
       }
-      if statis is not None:
+      if status is not None:
          params['filter'] = 'status%3D'+str(status)
       req = self.get(url,params=params)
       if req.status_code==200:
