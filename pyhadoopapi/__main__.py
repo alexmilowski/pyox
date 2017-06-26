@@ -1,5 +1,6 @@
 from .webhdfs import WebHDFS
 from .oozie import Oozie
+from .client import ServiceError
 from datetime import datetime
 import argparse
 import sys
@@ -8,6 +9,21 @@ import json
 from glob import glob
 import requests
 import logging
+
+def handle_error(err,verbose=False):
+   if err.status_code==401:
+      sys.stderr.write('Unauthorized (401)\n')
+   elif err.status_code==403:
+      sys.stderr.write('Forbidden (403)\n')
+   elif err.status_code==404:
+      sys.stderr.write('Not found (404)\n')
+   else:
+      sys.stderr.write('Status ({})'.format(err.status_code))
+   sys.stderr.write(err.message)
+   sys.stderr.write('\n')
+   if verbose and err.request is not None:
+      for chunk in err.request.iter_content(chunk_size=1024*32):
+         sys.stderr.buffer.write(chunk)
 
 def parseAuth(value):
    if value is None or len(value)==0:
@@ -110,15 +126,13 @@ def hdfs_cat_command(client,argv):
 def hdfs_mkdir_command(client,argv):
    for path in argv:
       if not client.make_directory(path):
-         sys.stderr.write('mkdir failed: {}\n'.format(path))
-         sys.exit(1)
+         raise ServiceError(403,'mkdir failed: {}'.format(path))
 
 def hdfs_mv_command(client,argv):
    if len(argv)!=3:
       sys.stderr.write('Invalid number of arguments: {}'.format(len(args.command)-1))
    if not client.mv(argv[0],argv[1]):
-      sys.stderr.write('Move failed.\n')
-      sys.exit(1)
+      raise ServiceError(403,'Move failed: {} → {}'.format(argv[0],argv[1]))
 
 def hdfs_rm_command(client,argv):
    rmparser = argparse.ArgumentParser(prog='pyhadoopapi hdfs rm',description="rm")
@@ -135,8 +149,7 @@ def hdfs_rm_command(client,argv):
    rmargs = rmparser.parse_args(argv)
    for path in rmargs.paths:
       if not client.remove(path,recursive=rmargs.recursive):
-         sys.stderr.write('Cannot remove: {}\n'.format(path))
-         sys.exit(1)
+         raise ServiceError(403,'Cannot remove: {}'.format(path))
 
 def hdfs_cp_command(client,argv):
    cpparser = argparse.ArgumentParser(prog='pyhadoopapi hdfs cp',description="cp")
@@ -193,8 +206,7 @@ def hdfs_cp_command(client,argv):
                   if client.make_directory(destpath+dirpath):
                      mkdirs.add(dirpath)
                   else:
-                     sys.stderr.write('Cannot make target directory: {}\n'.format(dirpath))
-                     sys.exit(1)
+                     raise ServiceError(403,'Cannot make target directory: {}'.format(dirpath))
 
             target = destpath + targetpath
 
@@ -212,8 +224,7 @@ def hdfs_cp_command(client,argv):
                         break
                      yield b
                if not client.copy(chunker() if size<0 else input,target,size=size,overwrite=cpargs.force):
-                  sys.stderr.write('Move failed.\n')
-                  sys.exit(1)
+                  raise ServiceError(403,'Move failed: {} → {}'.format(source,target))
    elif len(cpargs.paths)==2:
       source = cpargs.paths[0]
       size = os.path.getsize(source) if cpargs.sendsize else -1
@@ -221,12 +232,9 @@ def hdfs_cp_command(client,argv):
          if cpargs.verbose:
             sys.stderr.write(source+'\n')
          if not client.copy(input,destpath,size=size,overwrite=cpargs.force):
-            sys.stderr.write('Move failed.\n')
-            sys.exit(1)
+            raise ServiceError(403,'Move failed: {} → {}'.format(source,destpath))
    else:
-      sys.stderr.write('Target is not a directory.\n')
-      sys.exit(1)
-
+      raise ServiceError(400,'Target is not a directory.')
 
 hdfs_commands = {
    'ls' : hdfs_ls_command,
@@ -257,21 +265,9 @@ def hdfs_command(args):
          sys.exit(1)
 
       func(client,args.command[1:])
-   except PermissionError as err:
-      sys.stderr.write('Unauthorized\n');
-      sys.exit(err.status)
-   except IOError as err:
-      sys.stderr.write(str(err)+'\n')
-      if hasattr(err,'status'):
-         if err.status==403:
-            sys.stderr.write('Forbidden!\n')
-         elif err.status==404:
-            sys.stderr.write('Not found!\n')
-         else:
-            sys.stderr.write('status {}\n'.format(err.status))
-         sys.exit(err.status)
-      else:
-         sys.exit(1)
+   except ServiceError as err:
+      handle_error(err)
+      sys.exit(err.status_code)
 
    sys.exit(0)
 
@@ -400,53 +396,52 @@ def oozie_status_command(client,argv):
       print('\t'.join(['JOB','STATUS','USER','PATH','START','END','CODE','MESSAGE']))
 
    for jobid in args.jobids:
-      response = client.status(jobid,show=args.show)
-      #print(response)
-      if response[0]==404:
-         if args.raw:
-            sys.stdout.write('\n')
-            sys.stdout.write('{{"id":"{}","status":{}}}'.format(jobid,response[0]))
-            sys.stdout.write('\x1e')
-         else:
-            print('{}\tNOT FOUND'.format(jobid))
-         print('{}}\tNOT FOUND'.format(jobid))
-      elif response[0]!=200:
-         if args.raw:
-            sys.stdout.write('\n')
-            sys.stdout.write('{{"id":"{}","status":{}}}'.format(jobid,response[0]))
-            sys.stdout.write('\x1e')
-         else:
-            print('{}\tERROR {}'.format(jobid,response[0]))
-      else:
-         if args.raw or type(response[1])==str:
-            if type(response[1])==str:
-               sys.stdout.write(response[1])
-            elif type(response[1])==bytes:
-               sys.stdout.buffer.write(response[1])
+      try:
+         response = client.status(jobid,show=args.show)
+         if args.raw or type(response)==str:
+            if type(response)==str:
+               sys.stdout.write(response)
+            elif type(response)==bytes:
+               sys.stdout.buffer.write(response)
             else:
                sys.stdout.write('\n')
-               sys.stdout.write(json.dumps(response[1]))
+               sys.stdout.write(json.dumps(response))
                sys.stdout.write('\x1e')
          elif args.detailed:
-            startTime = response[1].get('startTime')
-            endTime = response[1].get('endTime')
-            lastModTime = response[1].get('lastModTime')
-            createdTime = response[1].get('createdTime')
-            appPath = response[1].get('appPath')
-            status = response[1].get('status')
-            actions = response[1].get('actions')
-            user = response[1].get('user')
+            startTime = response.get('startTime')
+            endTime = response.get('endTime')
+            lastModTime = response.get('lastModTime')
+            createdTime = response.get('createdTime')
+            appPath = response.get('appPath')
+            status = response.get('status')
+            actions = response.get('actions')
+            user = response.get('user')
             print('\t'.join(map(lambda x:str(x),[jobid,status,user,appPath,startTime,endTime])))
             if args.actions and actions is not None:
                for action in actions:
                   print('\t'.join(map(lambda x:str(x) if x is not None else '',[action.get('id'),action.get('status'),user,action.get('name'),action.get('startTime'),action.get('endTime'),action.get('errorCode'),action.get('errorMessage')])))
          else:
-            status = response[1].get('status')
+            status = response.get('status')
             print('{}\t{}'.format(jobid,status))
-            actions = response[1].get('actions')
+            actions = response.get('actions')
             if args.actions and actions is not None:
                for action in actions:
                   print('{}\t{}\t{}\t{}'.format(action.get('id'),action.get('status'),action.get('errorCode'),action.get('errorMessage')))
+      except ServiceError as err:
+         if err.status_code==404:
+            if args.raw:
+               sys.stdout.write('\n')
+               sys.stdout.write('{{"id":"{}","status":{}}}'.format(jobid,err.status_code))
+               sys.stdout.write('\x1e')
+            else:
+               print('{}\tNOT FOUND'.format(jobid))
+         else:
+            if args.raw:
+               sys.stdout.write('\n')
+               sys.stdout.write('{{"id":"{}","status":{}}}'.format(jobid,err.status_code))
+               sys.stdout.write('\x1e')
+            else:
+               raise
 
 def oozie_ls_command(client,argv):
    cmdparser = argparse.ArgumentParser(prog='pyhadoopapi oozie status',description='job status')
@@ -490,23 +485,20 @@ def oozie_ls_command(client,argv):
       msg = client.list_jobs(offset=args.offset,count=args.count)
    else:
       msg = client.list_jobs(offset=args.offset,count=args.count,status=args.status)
-   if msg[0]==200:
-      if args.detailed:
-         print('\t'.join(['ID','STATUS','NAME','USER','START','END']))
-         for job in msg[1]['workflows']:
-            id = job['id']
-            user = job['user']
-            status = job['status']
-            appName = job['appName']
-            startTime = job['startTime']
-            endTime = job['endTime']
-            print('\t'.join(map(lambda x:str(x) if x is not None else '',[id,status,appName,user,startTime,endTime])))
-      else:
-         for job in msg[1]['workflows']:
-            id = job['id']
-            print(id)
+   if args.detailed:
+      print('\t'.join(['ID','STATUS','NAME','USER','START','END']))
+      for job in msg['workflows']:
+         id = job['id']
+         user = job['user']
+         status = job['status']
+         appName = job['appName']
+         startTime = job['startTime']
+         endTime = job['endTime']
+         print('\t'.join(map(lambda x:str(x) if x is not None else '',[id,status,appName,user,startTime,endTime])))
    else:
-      sys.stderr.write('Failed to get status, {}\n'.format(msg[0]))
+      for job in msg['workflows']:
+         id = job['id']
+         print(id)
 
 
 oozie_commands = {
@@ -535,21 +527,9 @@ def oozie_command(args):
          sys.exit(1)
 
       func(client,args.command[1:])
-   except PermissionError as err:
-      sys.stderr.write('Unauthorized\n');
-      sys.exit(err.status)
-   except IOError as err:
-      sys.stderr.write(str(err)+'\n')
-      if hasattr(err,'status'):
-         if err.status==403:
-            sys.stderr.write('Forbidden!\n')
-         elif err.status==404:
-            sys.stderr.write('Not found!\n')
-         else:
-            sys.stderr.write('status {}\n'.format(err.status))
-         sys.exit(err.status)
-      else:
-         sys.exit(1)
+   except ServiceError as err:
+      handle_error(err)
+      sys.exit(err.status_code)
 
    sys.exit(0)
 

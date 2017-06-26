@@ -1,4 +1,4 @@
-from .client import Client
+from .client import Client, ServiceError, response_data
 from .webhdfs import WebHDFS
 from io import StringIO
 import sys
@@ -98,13 +98,10 @@ class Oozie(Client):
       url = '{}/job/{}'.format(self.service_url(version='v2'),jobid)
       req = self.get(url,params={'show':show})
       #print(req.url)
-      if req.headers['Content-Type'][0:len(_jsonType)]==_jsonType:
-         data = req.json()
-      elif req.headers['Content-Type'][0:5]=='image':
-         data = req.content
+      if req.status_code==200:
+         return response_data(req)
       else:
-         data = req.text
-      return (req.status_code,data)
+         raise ServiceError(req.status_code if req.status_code!=400 else 404,'Cannot get job information for {}'.format(jobid),request=req)
 
    def list_jobs(self,status=None,offset=0,count=50):
       url = '{}/jobs'.format(self.service_url(version='v2'))
@@ -117,7 +114,6 @@ class Oozie(Client):
       req = self.get(url,params=params)
       #print(req.url)
       if req.status_code==200:
-         msg = req.json()
-         return (req.status_code,msg)
+         return response_data(req)
       else:
-         return (req.status_code,req.text)
+         raise ServiceError(req.status_code,'Cannot list jobs'.format(jobid),request=req)

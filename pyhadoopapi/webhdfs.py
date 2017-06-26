@@ -1,5 +1,5 @@
 
-from .client import Client
+from .client import Client, ServiceError
 
 def absolute_path(path):
    if len(path)>0 and path[0]!='/':
@@ -24,8 +24,7 @@ class WebHDFS(Client):
             result[entry['pathSuffix']] = entry
          return result
       else:
-         print(req.text)
-         raise self._exception(req.status_code,'Cannot access path {}'.format(path))
+         raise ServiceError(req.status_code,'Cannot access path {}'.format(path),req)
 
    def open(self,path):
       path = absolute_path(path)
@@ -34,7 +33,7 @@ class WebHDFS(Client):
       if open_req.status_code==200:
          return open_req.iter_content(chunk_size=16384)
       else:
-         raise self._exception(open_req.status_code,'Cannot open path {}'.format(path))
+         raise ServiceError(open_req.status_code,'Cannot open path {}'.format(path),open_req)
 
    def make_directory(self,path):
       path = absolute_path(path)
@@ -42,7 +41,7 @@ class WebHDFS(Client):
       #print(url)
       req = self.put(url)
       if req.status_code!=200:
-         raise self._exception(req.status_code,'Cannot create path {}'.format(path))
+         raise ServiceError(req.status_code,'Cannot create path {}'.format(path),req)
       msg = req.json()
       return msg['boolean']
 
@@ -53,7 +52,7 @@ class WebHDFS(Client):
       #print(url)
       req = self.put(url)
       if req.status_code!=200:
-         raise self._exception(req.status_code,'Cannot move path {} to {}'.format(sourcepath,destpath))
+         raise ServiceError(req.status_code,'Cannot move path {} to {}'.format(sourcepath,destpath),req)
       msg = req.json()
       return msg['boolean']
 
@@ -64,7 +63,7 @@ class WebHDFS(Client):
       #print(url)
       req = self.delete(url)
       if req.status_code!=200:
-         raise self._exception(req.status_code,'Cannot delete path {}'.format(path))
+         raise ServiceError(req.status_code,'Cannot delete path {}'.format(path),req)
       msg = req.json()
       return msg['boolean']
 
@@ -89,7 +88,7 @@ class WebHDFS(Client):
             data=data,
             headers=headers)
          if req.status_code!=201:
-            raise self._exception(req.status_code,'Cannot copy to path {}'.format(path))
+            raise ServiceError(req.status_code,'Cannot copy to path {}'.format(path),req)
       else:
-         raise self._exception(req.status_code,'Cannot open path {}'.format(path))
+         raise ServiceError(req.status_code,'Cannot open path {}'.format(path),open_req)
       return True

@@ -19,6 +19,31 @@ def verbose_log(function):
       return r
    return wrapper
 
+_jsonType = 'application/json'
+
+def response_data(req):
+   contentType = req.headers.get('Content-Type')
+   majorType = contentType[0:contentType.find('/')] if contentType is not None else 'application'
+   if contentType is None:
+      data = None
+   elif contentType[0:len(_jsonType)]==_jsonType:
+      data = req.json()
+   elif majorType=='image' or majorType=='application':
+      data = req.content
+   else:
+      data = req.text
+   return data
+
+
+class ServiceError(Exception):
+   """Raised when a service interaction does not return a successful error code"""
+   def __init__(self,status_code,message,request=None):
+      self.status_code = status_code
+      self.message = message
+      self.request = request
+      if request is not None:
+         self.data = response_data(request)
+
 
 class Client:
 
@@ -113,12 +138,3 @@ class Client:
          auth=self.auth(),
          proxies=self.proxies,
          verify=self.verify)
-
-   def _exception(self,status,message):
-      error = None;
-      if status==401:
-         error = PermissionError(message)
-      else:
-         error = IOError(message)
-      error.status = status
-      return error;
