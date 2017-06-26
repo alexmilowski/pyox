@@ -1,5 +1,5 @@
-from .client import Client, ServiceError, response_data
-from .webhdfs import WebHDFS
+from pyhadoopapi.client import Client, ServiceError, response_data
+from pyhadoopapi.webhdfs import WebHDFS
 from io import StringIO
 import sys
 

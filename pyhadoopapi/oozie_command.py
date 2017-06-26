@@ -1,5 +1,5 @@
-from .oozie import Oozie
-from .client import ServiceError
+from pyhadoopapi.oozie import Oozie
+from pyhadoopapi.client import ServiceError
 import argparse
 import sys
 import os
@@ -104,6 +104,12 @@ def oozie_status_command(client,argv):
       default=False,
       help="return raw JSON")
    cmdparser.add_argument(
+      '-p',
+      action='store_true',
+      dest='pretty',
+      default=False,
+      help="Pretty print JSON")
+   cmdparser.add_argument(
       '-a',
       action='store_true',
       dest='actions',
@@ -126,7 +132,7 @@ def oozie_status_command(client,argv):
       nargs='*',
       help='a list job ids')
    args = cmdparser.parse_args(argv)
-   if args.detailed:
+   if not args.raw and args.detailed:
       print('\t'.join(['JOB','STATUS','USER','PATH','START','END','CODE','MESSAGE']))
 
    for jobid in args.jobids:
@@ -139,7 +145,7 @@ def oozie_status_command(client,argv):
                sys.stdout.buffer.write(response)
             else:
                sys.stdout.write('\n')
-               sys.stdout.write(json.dumps(response))
+               sys.stdout.write(json.dumps(response,indent=3,sort_keys=True) if args.pretty else json.dumps(response))
                sys.stdout.write('\x1e')
          elif args.detailed:
             startTime = response.get('startTime')

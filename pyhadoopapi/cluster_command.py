@@ -1,5 +1,5 @@
-from .cluster import ClusterInformation
-from .client import ServiceError
+from pyhadoopapi.cluster import ClusterInformation
+from pyhadoopapi.client import ServiceError
 from datetime import datetime
 import argparse
 import json

@@ -1,5 +1,5 @@
-from .webhdfs import WebHDFS
-from .client import ServiceError
+from pyhadoopapi.webhdfs import WebHDFS
+from pyhadoopapi.client import ServiceError
 from datetime import datetime
 import argparse
 import sys
