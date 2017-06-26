@@ -8,9 +8,11 @@ import json
 from glob import glob
 import requests
 import logging
+from requests.exceptions import ProxyError
 
 from .hdfs_command import hdfs_command
 from .oozie_command import oozie_command
+from .cluster_command import cluster_command
 
 def handle_error(err,verbose=False):
    if err.status_code==401:
@@ -48,6 +50,7 @@ def parseHost(value):
          return (value[0:colon],int(value[colon+1:]))
 
 commands = {
+   'cluster' : cluster_command,
    'hdfs' : hdfs_command,
    'oozie' : oozie_command
 }
@@ -134,6 +137,10 @@ def main():
    except ServiceError as err:
       handle_error(err)
       sys.exit(err.status_code)
+   except ProxyError as err:
+      sys.stderr.write(str(err))
+      sys.stderr.write('\n')
+      sys.exit(1)
 
 if __name__ == '__main__':
    main()
