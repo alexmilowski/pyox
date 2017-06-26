@@ -1,5 +1,5 @@
-from .oozie import Oozie
-from .client import ServiceError
+from pyhadoopapi.oozie import Oozie
+from pyhadoopapi.client import ServiceError
 from datetime import datetime
 import argparse
 import sys
