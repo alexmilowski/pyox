@@ -145,12 +145,12 @@ def cluster_metrics_command(client,argv):
 def print_queue(depth,queueInfo,show_users=False):
    indent = depth*3
    width = 32 - indent
-   formatstr = '{'+(':'+str(indent) if depth>0 else '')+'}{:'+str(width)+'} {:6.2f} {:6.2f}'
+   formatstr = '{'+(':'+str(indent) if depth>0 else '')+'}{:'+str(width)+'} {:6.2f} {:6.2f} {:6.2f}'
    active = queueInfo.get('numActiveApplications')
    pending = queueInfo.get('numPendingApplications')
    if active is not None:
       formatstr += ' {:3d} {:3d}'
-   print(formatstr.format('',queueInfo.get('queueName'),queueInfo.get('capacity'),queueInfo.get('maxCapacity'),active,pending))
+   print(formatstr.format('',queueInfo.get('queueName'),queueInfo.get('capacity'),queueInfo.get('maxCapacity'),queueInfo.get('usedCapacity'),active,pending))
    if show_users:
       users = queueInfo.get('users')
       if users is not None:
@@ -198,7 +198,7 @@ def cluster_scheduler_command(client,argv):
          print(schedulerInfo)
       return
 
-   print('{:32} {:6} {:6} {:3} {:3}'.format('NAME',' MIN',' MAX','ACT','PEN'))
+   print('{:32} {:6} {:6} {:6} {:3} {:3}'.format('NAME',' MIN',' MAX','USED','ACT','PEN'))
    print_queue(0,schedulerInfo,show_users=args.show_users)
 
 
