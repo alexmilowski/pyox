@@ -1,0 +1,27 @@
+<html>
+  <head>
+    {% if title %}
+    <title>{{ title }}</title>
+    {% else %}
+    <title>Cluster Information</title>
+    {% endif %}
+    {% block style %}
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/uikit/3.0.0-beta.24/css/uikit.min.css"  type="text/css">
+    <link rel="stylesheet" href="/assets/css/main.css" type="text/css">
+    {% endblock %}
+    {% block libraries %}
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/uikit/3.0.0-beta.24/js/uikit.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/uikit/3.0.0-beta.24/js/uikit-icons.min.js"></script>
+    <script   src="https://code.jquery.com/jquery-3.2.1.min.js"   integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4="   crossorigin="anonymous"></script>
+    <script src="https://use.fontawesome.com/61aa787dce.js"></script>
+    {% endblock %}
+    {% block head %}{% endblock %}
+  </head>
+  <body>
+    {% block header %}{% endblock %}
+    <main>
+    {% block content %}{% endblock %}
+    </main>
+    {% block footer %}{% endblock %}
+  </body>
+</html>
