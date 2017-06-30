@@ -57,7 +57,7 @@ python -m pyhadoopapi hdfs ls -h
   * copy resources to the job path via `-cp`
   * specify the name node (`--namenode`) or job tracker (`--tracker`) to override what is in the properties
 
-## Monitor Web Applications
+## Monitor Web Application
 
 A simple flask application can provide a web UI and proxy to the cluster information and scheduler queues.  The
 application can be run by:
@@ -85,3 +85,6 @@ KNOX={
 Any of the client configuration keywords are available (e.g., `service`,`base`, `secure`, `host`, `port`) except
 the user authentication.  The user authentication for both the API and service are passed through to the Knox
 Web Service.  You must have authentication credentials for Knox to use the Web application.
+
+Once you have the application running, you can access it at the address you have configured.  By default, this is
+http://localhost:5000/
