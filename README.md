@@ -1,6 +1,6 @@
 # Python Apache Knox (Hadoop) REST Client library
 
-# CLI Usage
+## CLI Usage
 
 The command-line client can be run by:
 
@@ -56,3 +56,32 @@ python -m pyhadoopapi hdfs ls -h
   * specify the workflow definition via `-d file.xml`
   * copy resources to the job path via `-cp`
   * specify the name node (`--namenode`) or job tracker (`--tracker`) to override what is in the properties
+
+## Monitor Web Applications
+
+A simple flask application can provide a web UI and proxy to the cluster information and scheduler queues.  The
+application can be run by:
+
+```
+python -m pyhadoopapi.apps.monitor conf
+```
+
+where `conf.py` is in your python import path and contains the application configuration.  Alternatively, you
+can set the environment variable `WEB_CONF` to the location of this file.
+
+The configuration can contain any of the standard flask configuration options.  The variable `KNOX` must
+be present for the configuraiton of the Apache Knox gateway.
+
+For example, `conf.py` might contain:
+
+```python
+DEBUG=True
+KNOX={
+   'base' : 'https://knox.example.com',
+   'gateway': 'bigdata'
+}
+```
+
+Any of the client configuration keywords are available (e.g., `service`,`base`, `secure`, `host`, `port`) except
+the user authentication.  The user authentication for both the API and service are passed through to the Knox
+Web Service.  You must have authentication credentials for Knox to use the Web application.
