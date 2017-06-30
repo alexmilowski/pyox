@@ -1,5 +1,5 @@
 
-from pyhadoopapi.apps.backbone.app import app
+from pyhadoopapi.apps.monitor.app import app
 import sys
 
 if __name__ == '__main__':

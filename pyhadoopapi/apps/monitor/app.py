@@ -4,9 +4,9 @@ from flask import Flask, request, g, session, redirect, abort
 app = Flask(__name__)
 #Session(app)
 
-from pyhadoopapi.apps.backbone.views import cluster_ui
-from pyhadoopapi.apps.backbone.views import assets
-from pyhadoopapi.apps.backbone.api import cluster_api
+from pyhadoopapi.apps.monitor.views import cluster_ui
+from pyhadoopapi.apps.monitor.views import assets
+from pyhadoopapi.apps.monitor.api import cluster_api
 
 app.register_blueprint(cluster_ui,url_prefix='/')
 app.register_blueprint(cluster_api,url_prefix='/api/cluster')
