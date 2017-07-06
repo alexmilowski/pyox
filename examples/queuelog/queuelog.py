@@ -75,7 +75,7 @@ parser.add_argument(
    '--parameter',
    dest='parameters',
    action='append',
-   help="A client parameter")
+   help="A client parameter to be passed to the handler")
 parser.add_argument(
    '--client',
    default='default_client',
