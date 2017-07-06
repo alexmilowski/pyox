@@ -57,6 +57,37 @@ python -m pyhadoopapi hdfs ls -h
   * copy resources to the job path via `-cp`
   * specify the name node (`--namenode`) or job tracker (`--tracker`) to override what is in the properties
 
+### cluster commands
+
+ * `info` - shows basic cluster information such as versions, status, etc.
+ * `metrics` - shows information about applications, containers, cores, memory, and nodes
+ * `scheduler` - shows the queues and their utilization
+
+#### cluster info
+
+Options:
+
+ * `-r` - output the raw JSON response
+ * `-p` - pretty print the JSON
+ * `--status` - output cluster status
+ * `--version` - output only the hadoop version
+ * `-a` - output all information
+
+#### cluster metrics
+
+Options:
+
+ * `-r` - output the raw JSON response
+ * `-p` - pretty print the JSON
+
+#### cluster scheduler
+
+Options:
+
+ * `-r` - output the raw JSON response
+ * `-p` - pretty print the JSON
+ * `--users` - show user utilization of queues
+
 ## Monitor Web Application
 
 A simple flask application can provide a web UI and proxy to the cluster information and scheduler queues.  The
