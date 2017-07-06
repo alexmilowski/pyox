@@ -1,0 +1,36 @@
+{
+   "version" : 1,
+   "disable_existing_loggers" : false,
+   "formatters" : {
+      "console" : {
+         "format" : "%(message)s"
+      },
+      "jsonseq" : {
+         "format" : "\u001e%(message)s"
+      }
+   },
+   "handlers" : {
+      "stdout" : {
+         "level" : "INFO",
+         "class": "logging.StreamHandler",
+         "formatter" : "console",
+         "stream" : "ext://sys.stdout"
+
+      },
+      "file" : {
+         "level" : "INFO",
+         "class" : "logging.handlers.RotatingFileHandler",
+         "formatter" : "jsonseq",
+         "filename" : "queue.log",
+         "maxBytes" : 104857600,
+         "encoding" : "utf-8"
+      }
+   },
+   "loggers" : {
+      "" : {
+         "level" : "INFO",
+         "handlers" : ["stdout","file"],
+         "propagate" : true
+      }
+   }
+}
