@@ -3,13 +3,12 @@ import logging
 from requests.auth import HTTPBasicAuth
 import sys
 
-#from requests.packages.urllib3.exceptions import InsecureRequestWarning
-#
-#requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
-
-from urllib3.exceptions import InsecureRequestWarning
-import urllib3
-urllib3.disable_warnings(InsecureRequestWarning)
+try:
+   from urllib3.exceptions import InsecureRequestWarning
+   import urllib3
+   urllib3.disable_warnings(InsecureRequestWarning)
+except ImportError:
+   pass
 
 def verbose_log(function):
    def wrapper(self,*args,**kwargs):
