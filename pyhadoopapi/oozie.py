@@ -84,61 +84,66 @@ class XMLWriter:
       self.io.write(XMLWriter.escape_text(value))
       return self
 
+   def newline(self):
+      self._markchild()
+      self.io.write('\n')
+      return self
+
    def named_child(self,name,value,all=True):
       if value is not None:
          if type(value)==list:
             if all:
                for item in value:
-                  self.text('\n')
                   if hasattr(item,'to_xml'):
                      self.start(name)
                      item.to_xml(self)
                      self.end()
                   else:
                      self.start(name).text(str(item)).end()
+                  self.newline()
             else:
-               self.text('\n')
                if hasattr(value[0],'to_xml'):
                   self.start(name)
                   value[0].to_xml(self)
                   self.end()
                else:
                   self.start(name).text(str(value[0])).end()
+               self.newline()
          else:
-            self.text('\n')
             if hasattr(value,'to_xml'):
                self.start(name)
                value.to_xml(self)
                self.end()
             else:
                self.start(name).text(value).end()
+            self.newline()
 
    def child(self,value,all=True):
       if value is not None:
          if type(value)==list:
             if all:
                for item in value:
-                  self.text('\n')
+                  self.newline()
                   if hasattr(item,'to_xml'):
                      item.to_xml(self)
                   else:
                      self.text(str(item))
             else:
-               self.text('\n')
+               self.newline()
                if hasattr(value[0],'to_xml'):
                   value[0].to_xml(self)
                else:
                   self.text(str(value[0]))
          else:
-            self.text('\n')
+            self.newline()
             if hasattr(value,'to_xml'):
-               value.to_xml(xml)
+               value.to_xml(self)
             else:
                self.text(str(value))
 
    def finish(self):
       while len(self.open_elements)>0:
-         self.end()
+         self.end().newline()
 
 
 
@@ -257,9 +262,9 @@ class Workflow(XMLSerializable):
       action.cred_type = cred_type
       action.properties = properties
       def to_xml(self,xml):
-         xml.start('credential',{'name':self.cred_name,'type':self.cred_type})
+         xml.start('credential',{'name':self.cred_name,'type':self.cred_type}).newline()
          xml.child(self.properties)
-         xml.end()
+         xml.end().newline()
       action.to_xml = types.MethodType(to_xml,action)
       self.credentials.append(action)
       return self
@@ -274,13 +279,13 @@ class Workflow(XMLSerializable):
       action = XMLSerializable()
       action.properties = kwargs
       def to_xml(self,xml):
-         xml.start('streaming')
+         xml.start('streaming').newline()
          xml.named_child('mapper',self.properties.get('mapper'),all=False)
          xml.named_child('reducer',self.properties.get('reducer'),all=False)
          xml.named_child('record-reader',self.properties.get('record_reader'),all=False)
          xml.named_child('record-reader-mapping',self.properties.get('record_reader_mapping'))
          xml.named_child('env',self.properties.get('env'))
-         xml.end()
+         xml.end().newline()
       action.to_xml = types.MethodType(to_xml,action)
       return action
 
@@ -288,14 +293,14 @@ class Workflow(XMLSerializable):
       action = XMLSerializable()
       action.properties = kwargs
       def to_xml(self,xml):
-         xml.start('pipes')
+         xml.start('pipes').newline()
          xml.named_child('map',self.properties.get('map'),all=False)
          xml.named_child('reduce',self.properties.get('reduce'),all=False)
          xml.named_child('inputformat',self.properties.get('inputformat'),all=False)
          xml.named_child('partitioner',self.properties.get('partitioner'),all=False)
          xml.named_child('writer',self.properties.get('writer'),all=False)
          xml.named_child('program',self.properties.get('program'),all=False)
-         xml.end()
+         xml.end().newline()
       action.to_xml = types.MethodType(to_xml,action)
       return action
 
@@ -303,7 +308,7 @@ class Workflow(XMLSerializable):
       action = XMLSerializable()
       action.path = path
       def to_xml(self,xml):
-         xml.empty('delete',{'path':self.path})
+         xml.empty('delete',{'path':self.path}).newline()
       action.to_xml = types.MethodType(to_xml,action)
       return action
 
@@ -311,7 +316,7 @@ class Workflow(XMLSerializable):
       action = XMLSerializable()
       action.path = path
       def to_xml(self,xml):
-         xml.empty('mkdir',{'path':self.path})
+         xml.empty('mkdir',{'path':self.path}).newline()
       action.to_xml = types.MethodType(to_xml,action)
       return action
 
@@ -319,10 +324,10 @@ class Workflow(XMLSerializable):
       action = XMLSerializable()
       action.items = items
       def to_xml(self,xml):
-         xml.start('prepare')
+         xml.start('prepare').newline()
          for item in self.items:
             item.to_xml(item)
-         xml.end()
+         xml.end().newline()
       action.to_xml = types.MethodType(to_xml,action)
       return action
 
@@ -336,11 +341,11 @@ class Workflow(XMLSerializable):
          raise ValueError('The property value can not be missing.')
       action.description = description
       def to_xml(self,xml):
-         xml.start('property')
+         xml.start('property').newline()
          xml.named_child('name',self.name)
          xml.named_child('value',self.value)
          xml.named_child('description',self.description)
-         xml.end()
+         xml.end().newline()
       action.to_xml = types.MethodType(to_xml,action)
       return action
 
@@ -348,10 +353,10 @@ class Workflow(XMLSerializable):
       action = XMLSerializable()
       action.items = items
       def to_xml(self,xml):
-         xml.start('configuration')
+         xml.start('configuration').newline()
          for item in self.items:
             item.to_xml(item)
-         xml.end()
+         xml.end().newline()
       action.to_xml = types.MethodType(to_xml,action)
       return action
 
@@ -362,7 +367,7 @@ class Workflow(XMLSerializable):
       action.streaming_or_pipes = streaming_or_pipes
       action.properties = kwargs
       def to_xml(self,xml):
-         xml.start('map-reduce')
+         xml.start('map-reduce').newline()
          xml.named_child('job-tracker',self.job_tracker)
          xml.named_child('name-node',self.name_node)
          xml.child(self.properties.get('prepare'))
@@ -371,7 +376,7 @@ class Workflow(XMLSerializable):
          xml.child(self.properties.get('configuration'))
          xml.named_child('file',self.properties.get('file'))
          xml.named_child('archive',self.properties.get('archive'))
-         xml.end()
+         xml.end().newline()
       action.to_xml = types.MethodType(to_xml,action)
       return action
 
@@ -384,7 +389,7 @@ class Workflow(XMLSerializable):
       action.jar = jar
       action.properties = kwargs
       def to_xml(self,xml):
-         xml.start('spark',{'xmlns':'uri:oozie:spark-action:0.1'})
+         xml.start('spark',{'xmlns':'uri:oozie:spark-action:0.1'}).newline()
          xml.named_child('job-tracker',self.job_tracker)
          xml.named_child('name-node',self.name_node)
          xml.child(self.properties.get('prepare'))
@@ -396,7 +401,7 @@ class Workflow(XMLSerializable):
          xml.named_child('jar',self.jar)
          xml.named_child('spark-opts',self.properties.get('spark_opts'))
          xml.named_child('arg',self.properties.get('arg'))
-         xml.end()
+         xml.end().newline()
       action.to_xml = types.MethodType(to_xml,action)
       return action
 
@@ -407,18 +412,18 @@ class Workflow(XMLSerializable):
       action.script = script
       action.properties = kwargs
       def to_xml(self,xml):
-         xml.start('pig')
+         xml.start('pig').newline()
          xml.named_child('job-tracker',self.job_tracker)
          xml.named_child('name-node',self.name_node)
          xml.child(self.properties.get('prepare'))
          xml.named_child('job-xml',self.properties.get('job_xml'))
          xml.child(self.properties.get('configuration'))
          xml.named_child('script',self.script)
-         xml.named_child(xml,'param',self.properties.get('param'))
-         xml.named_child(xml,'argument',self.properties.get('argument'))
-         xml.named_child(xml,'file',self.properties.get('file'))
-         xml.named_child(xml,'archive',self.properties.get('archive'))
-         xml.end()
+         xml.named_child('param',self.properties.get('param'))
+         xml.named_child('argument',self.properties.get('argument'))
+         xml.named_child('file',self.properties.get('file'))
+         xml.named_child('archive',self.properties.get('archive'))
+         xml.end().newline()
       action.to_xml = types.MethodType(to_xml,action)
       return action
 
@@ -428,13 +433,13 @@ class Workflow(XMLSerializable):
       action.configuration = configuration
       action.propagate_configuration = propagate_configuration
       def to_xml(self,xml):
-         xml.start('sub-workflow')
+         xml.start('sub-workflow').newline()
          xml.named_child('app-path',self.app_path)
 
          if self.propagate_configuration:
-            xml.start('propagate-configuration').end()
+            xml.start('propagate-configuration').end().newline()
          xml.child(self.configuration)
-         xml.end()
+         xml.end().newline()
       action.to_xml = types.MethodType(to_xml,action)
       return action
 
@@ -442,7 +447,7 @@ class Workflow(XMLSerializable):
       action = XMLSerializable()
       action.operations = operations;
       def to_xml(self,xml):
-         xml.start('fs')
+         xml.start('fs').newline()
          xml.child(action.operations)
          xml.end()
       action.to_xml = types.MethodType(to_xml,action)
@@ -455,20 +460,20 @@ class Workflow(XMLSerializable):
       action.main_class = main_class
       action.properties = kwargs
       def to_xml(self,xml):
-         xml.start('java')
+         xml.start('java').newline()
          xml.named_child('job-tracker',self.job_tracker)
          xml.named_child('name-node',self.name_node)
          xml.child(self.properties.get('prepare'))
          xml.named_child('job-xml',self.properties.get('job_xml'))
          xml.child(self.properties.get('configuration'))
          xml.named_child('main-class',self.main_class)
-         xml.named_child(xml,'java-opts',self.properties.get('java_opts'))
-         xml.named_child(xml,'arg',self.properties.get('arg'))
-         xml.named_child(xml,'file',self.properties.get('file'))
-         xml.named_child(xml,'archive',self.properties.get('archive'))
+         xml.named_child('java-opts',self.properties.get('java_opts'))
+         xml.named_child('arg',self.properties.get('arg'))
+         xml.named_child('file',self.properties.get('file'))
+         xml.named_child('archive',self.properties.get('archive'))
          if self.properties.get('capture_output'):
-            xml.start('capture-output').end()
-         xml.end()
+            xml.start('capture-output').end().newline()
+         xml.end().newline()
       action.to_xml = types.MethodType(to_xml,action)
       return action
 
@@ -492,53 +497,49 @@ class Workflow(XMLSerializable):
    def to_xml(self,xml):
       xml.start('workflow-app',{'xmlns' : 'uri:oozie:workflow:0.1', 'name' : self.name})
       if len(self.credentials)>0:
-         xml.start('credentials')
+         xml.start('credentials').newline()
          xml.child(self.credentials)
-         xml.end();
+         xml.end().newline()
       if self.start is not None:
-         xml.empty('start',{'to':self.start})
+         xml.empty('start',{'to':self.start}).newline()
       for item in self.items.values():
          if item.itemType==WorkflowItem.Type.ACTION:
-            xml.start('action',{'name':item.name})
+            xml.start('action',{'name':item.name}).newline()
             action = item.properties.get('action')
             if action is not None:
                action.to_xml(xml)
-            xml.empty('ok',{'to':item.targets[0]}) \
-               .empty('error',{'to':item.targets[1]}) \
-               .end()
+            xml.empty('ok',{'to':item.targets[0]}).newline() \
+               .empty('error',{'to':item.targets[1]}).newline() \
+               .end().newline()
          elif item.itemType==WorkflowItem.Type.SWITCH:
             default = None
-            xml.start('decision',{'name':item.name})
-            xml.start('switch')
+            xml.start('decision',{'name':item.name}).newline()
+            xml.start('switch').newline()
             for case in item.properties['cases']:
                if type(case)==str:
                   default = case
                else:
                   xml.start('case',{'to':case[0]})
                   xml.text(case[1])
-                  xml.end()
+                  xml.end().newline()
             if default is not None:
-               xml.empty('default',{'to':default})
-            xml.end()
-            xml.end()
+               xml.empty('default',{'to':default}).newline()
+            xml.end().newline()
+            xml.end().newline()
          elif item.itemType==WorkflowItem.Type.FORK:
-            xml.start('fork',{'name':item.name})
+            xml.start('fork',{'name':item.name}).newline()
             for start in item.targets:
-               xml.empty('path',{'start':start})
-            xml.end()
+               xml.empty('path',{'start':start}).newline()
+            xml.end().newline()
          elif item.itemType==WorkflowItem.Type.JOIN:
-            xml.empty('join',{'name':item.name,'to':item.targets[0]})
+            xml.empty('join',{'name':item.name,'to':item.targets[0]}).newline()
          elif item.itemType==WorkflowItem.Type.FORK:
-            xml.start('kill',{'name':item.name})
-            xml.start('message')
-            message = item.properties.get('message')
-            if message is not None:
-               xml.text(str(message))
-            xml.end()
-            xml.end()
+            xml.start('kill',{'name':item.name}).newline()
+            xml.named_child('message',item.properties.get('message'))
+            xml.end().newline()
 
       if self.end is not None:
-         xml.empty('end',{'name':self.end})
+         xml.empty('end',{'name':self.end}).newline()
       xml.finish()
 #         for item in self.items.values():
 #            if item.itemType==WorkflowItem.Type.SWITCH:
