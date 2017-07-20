@@ -13,6 +13,7 @@ from requests.exceptions import ProxyError
 from .hdfs_command import hdfs_command
 from .oozie_command import oozie_command
 from .cluster_command import cluster_command
+from pyhadoopapi.submit_command import submit_command
 
 def handle_error(err,verbose=False):
    if err.status_code==401:
@@ -52,7 +53,8 @@ def parseHost(value):
 commands = {
    'cluster' : cluster_command,
    'hdfs' : hdfs_command,
-   'oozie' : oozie_command
+   'oozie' : oozie_command,
+   'submit' : submit_command
 }
 
 def main():
@@ -115,7 +117,6 @@ def main():
    #print(args)
 
    if len(args.command)==0:
-      usage(commands)
       parser.print_help()
       sys.exit(1)
 

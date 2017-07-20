@@ -59,12 +59,6 @@ def oozie_start_command(client,argv):
    if args.tracker is not None:
       client.addProperty('jobTracker',args.tracker)
 
-   job = client.newJob(args.path)
-   if args.definition is not None:
-      with open(args.definition,'rb') as data:
-         if args.verbose:
-            sys.stderr.write('{} → {}\n'.format(args.definition,'workflow.xml'))
-         job.define_workflow(data,overwrite=True)
    properties = {}
    if args.properties is not None:
       for propfile in args.properties:
@@ -75,6 +69,8 @@ def oozie_start_command(client,argv):
    if args.property is not None:
       for prop in args.property:
          properties[prop[0]] = prop[1]
+
+   files=[]
    if args.copy is not None:
       for copy in args.copy:
          fpath = copy[0]
@@ -88,11 +84,12 @@ def oozie_start_command(client,argv):
          else:
             slash = fpath.rfind('/')
             dest = fpath[slash+1] if slash>=0 else fpath
-         with open(fpath,'rb') as data:
-            if args.verbose:
-               sys.stderr.write('{} → {}\n'.format(fpath,dest))
-            job.copy_resource(data,dest,overwrite=True)
-   jobid = job.start(properties,verbose=args.verbose)
+         files.append((fpath,dest))
+   if args.definition is not None:
+      with open(args.definition,'rb') as data:
+         jobid = client.submit(args.path,properties=properties,workflow=data,copy=files,verbose=args.verbose)
+   else:
+      jobid = client.submit(args.path,properties=properties,copy=files,verbose=args.verbose)
    print(jobid)
 
 def oozie_status_command(client,argv):

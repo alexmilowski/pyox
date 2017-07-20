@@ -123,23 +123,23 @@ class XMLWriter:
          if type(value)==list:
             if all:
                for item in value:
-                  self.newline()
                   if hasattr(item,'to_xml'):
                      item.to_xml(self)
                   else:
                      self.text(str(item))
+                     self.newline()
             else:
-               self.newline()
                if hasattr(value[0],'to_xml'):
                   value[0].to_xml(self)
                else:
                   self.text(str(value[0]))
+                  self.newline()
          else:
-            self.newline()
             if hasattr(value,'to_xml'):
                value.to_xml(self)
             else:
                self.text(str(value))
+               self.newline()
 
    def finish(self):
       while len(self.open_elements)>0:
@@ -355,7 +355,15 @@ class Workflow(XMLSerializable):
       def to_xml(self,xml):
          xml.start('configuration').newline()
          for item in self.items:
-            item.to_xml(item)
+            if type(item)==dict:
+               for name in item:
+                  value = item[name]
+                  xml.start('property').newline()
+                  xml.named_child('name',name)
+                  xml.named_child('value',value)
+                  xml.end().newline()
+            else:
+               item.to_xml(item)
          xml.end().newline()
       action.to_xml = types.MethodType(to_xml,action)
       return action
@@ -423,6 +431,70 @@ class Workflow(XMLSerializable):
          xml.named_child('argument',self.properties.get('argument'))
          xml.named_child('file',self.properties.get('file'))
          xml.named_child('archive',self.properties.get('archive'))
+         xml.end().newline()
+      action.to_xml = types.MethodType(to_xml,action)
+      return action
+
+   def hive(job_tracker,name_node,script,**kwargs):
+      action = XMLSerializable()
+      action.job_tracker = job_tracker
+      action.name_node = name_node
+      action.script = script
+      action.properties = kwargs
+      def to_xml(self,xml):
+         xml.start('hive',{'xmlns':'uri:oozie:hive-action:0.3'}).newline()
+         xml.named_child('job-tracker',self.job_tracker)
+         xml.named_child('name-node',self.name_node)
+         xml.child(self.properties.get('prepare'))
+         xml.named_child('job-xml',self.properties.get('job_xml'))
+         xml.child(self.properties.get('configuration'))
+         xml.named_child('script',self.script)
+         xml.named_child('param',self.properties.get('param'))
+         xml.named_child('file',self.properties.get('file'))
+         xml.named_child('archive',self.properties.get('archive'))
+         xml.end().newline()
+      action.to_xml = types.MethodType(to_xml,action)
+      return action
+
+   def hive2(job_tracker,name_node,jdbc_url,script,**kwargs):
+      action = XMLSerializable()
+      action.job_tracker = job_tracker
+      action.name_node = name_node
+      action.jdbc_url = jdbc_url
+      action.script = script
+      action.properties = kwargs
+      def to_xml(self,xml):
+         xml.start('hive',{'xmlns':'uri:oozie:hive2-action:0.1'}).newline()
+         xml.named_child('job-tracker',self.job_tracker)
+         xml.named_child('name-node',self.name_node)
+         xml.child(self.properties.get('prepare'))
+         xml.named_child('job-xml',self.properties.get('job_xml'))
+         xml.child(self.properties.get('configuration'))
+         xml.named_child('jdbc-url',self.jdbc_url)
+         xml.named_child('password',self.properties.get('password'))
+         xml.named_child('script',self.script)
+         xml.named_child('param',self.properties.get('param'))
+         xml.named_child('argument',self.properties.get('argument'))
+         xml.named_child('file',self.properties.get('file'))
+         xml.named_child('archive',self.properties.get('archive'))
+         xml.end().newline()
+      action.to_xml = types.MethodType(to_xml,action)
+      return action
+
+   def ssh(host,command,*args,capture_output=False):
+      action = XMLSerializable()
+      action.host = host
+      action.command = command
+      action.args = args
+      action.capture_output = capture_output
+      def to_xml(self,xml):
+         xml.start('ssh').newline()
+         xml.named_child('host',self.host)
+         xml.named_child('command',self.command)
+         for arg in self.args:
+            xml.named_child('args',arg)
+         if self.capture_output:
+            xml.start('capture-output').end().newline()
          xml.end().newline()
       action.to_xml = types.MethodType(to_xml,action)
       return action
@@ -495,7 +567,7 @@ class Workflow(XMLSerializable):
       return self
 
    def to_xml(self,xml):
-      xml.start('workflow-app',{'xmlns' : 'uri:oozie:workflow:0.1', 'name' : self.name})
+      xml.start('workflow-app',{'xmlns' : 'uri:oozie:workflow:0.1', 'name' : self.name}).newline()
       if len(self.credentials)>0:
          xml.start('credentials').newline()
          xml.child(self.credentials)
@@ -533,7 +605,7 @@ class Workflow(XMLSerializable):
             xml.end().newline()
          elif item.itemType==WorkflowItem.Type.JOIN:
             xml.empty('join',{'name':item.name,'to':item.targets[0]}).newline()
-         elif item.itemType==WorkflowItem.Type.FORK:
+         elif item.itemType==WorkflowItem.Type.KILL:
             xml.start('kill',{'name':item.name}).newline()
             xml.named_child('message',item.properties.get('message'))
             xml.end().newline()
@@ -541,15 +613,6 @@ class Workflow(XMLSerializable):
       if self.end is not None:
          xml.empty('end',{'name':self.end}).newline()
       xml.finish()
-#         for item in self.items.values():
-#            if item.itemType==WorkflowItem.Type.SWITCH:
-#
-#            elif item.itemType==WorkflowItem.Type.FORK:
-#            elif item.itemType==WorkflowItem.Type.JOIN:
-#            elif item.itemType==WorkflowItem.Type.KILL:
-#            elif item.itemType==WorkflowItem.Type.ACTION:
-
-
 
 
 class Job:
@@ -645,3 +708,23 @@ class Oozie(Client):
          return response_data(req)
       else:
          raise ServiceError(req.status_code,'Cannot list jobs'.format(jobid),request=req)
+
+   def submit(self,path,properties=None,workflow=None,copy=[],verbose=False):
+      job = self.newJob(path)
+      if workflow is not None:
+         if verbose:
+            sys.stderr.write('Copying workflow.xml ..\n')
+         job.define_workflow(workflow,overwrite=True)
+      for info in copy:
+         if type(info)==tuple:
+            fpath = info[0]
+            dest = info[1]
+         else:
+            fpath = info
+            slash = fpath.rfind('/')
+            dest = fpath[slash+1] if slash>=0 else fpath
+         with open(fpath,'rb') as data:
+            if verbose:
+               sys.stderr.write('{} → {}\n'.format(fpath,dest))
+            job.copy_resource(data,dest,overwrite=True)
+      return job.start(properties)
