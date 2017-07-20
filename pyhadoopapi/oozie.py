@@ -629,21 +629,24 @@ class Job:
       return self.oozie.webhdfs.copy(data,self.path + '/' + resource_path,overwrite=overwrite)
 
    def define_workflow(self,data,overwrite=False):
+      if type(data)==Workflow:
+         data = StringIO(str(data))
       return self.copy_resource(data,'workflow.xml',overwrite=overwrite)
 
 
    def start(self,properties,verbose=False):
       xml = StringIO()
       xml.write('<?xml version="1.0" encoding="UTF-8"?>\n<configuration>\n')
-      for name in properties:
-         value = properties[name]
-         write_property(xml,name,value)
+      if properties is not None:
+         for name in properties:
+            value = properties[name]
+            write_property(xml,name,value)
       for name in self.oozie.properties:
          if name not in properties:
             write_property(xml,name,value)
-      if OOZIE_APP_PATH not in properties:
+      if properties is not None and OOZIE_APP_PATH not in properties:
          write_property(xml,OOZIE_APP_PATH,'hdfs://{}{}/workflow.xml'.format(self.namenode,self.path))
-      if NAMENODE not in properties:
+      if properties is not None and NAMENODE not in properties:
          write_property(xml,NAMENODE,'hdfs://{}'.format(self.namenode))
       xml.write('</configuration>\n')
 
@@ -683,7 +686,7 @@ class Oozie(Client):
          return msg['id']
       else:
          #print(req.text)
-         raise self._exception(req.status_code,'Cannot start job.')
+         raise ServiceError(req.status_code,'Cannot start job.',request=req)
 
    def status(self,jobid,show='info'):
       url = '{}/job/{}'.format(self.service_url(version='v2'),jobid)

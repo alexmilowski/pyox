@@ -247,5 +247,5 @@ def submit_command(args):
 
    hdfs.make_directory(submit_args.path)
 
-   #jobid = client.submit(submit_args.path,properties=properties,workflow=StringIO(str(workflow)),copy=files,verbose=args.verbose)
-   #print(jobid)
+   jobid = client.submit(submit_args.path,properties=properties,workflow=str(workflow),copy=files,verbose=args.verbose)
+   print(jobid)
