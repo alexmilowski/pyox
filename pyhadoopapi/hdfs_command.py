@@ -4,6 +4,7 @@ from datetime import datetime
 import argparse
 import sys
 import os
+from os.path import isfile
 from glob import glob
 
 class tracker:
@@ -105,6 +106,43 @@ def hdfs_rm_command(client,argv):
       if not client.remove(path,recursive=rmargs.recursive):
          raise ServiceError(403,'Cannot remove: {}'.format(path))
 
+def copy_to_destination(client,source,destpath,verbose=False,force=False):
+   size = os.path.getsize(source)
+   targetpath = source
+   slash = source.rfind('/')
+   if source[0]=='/':
+      targetpath = source[slash+1:]
+   elif source[0:3]=='../':
+      targetpath = source[slash+1:]
+   elif slash > 0 :
+      dirpath = source[0:slash]
+      if dirpath not in mkdirs.values:
+         if cpargs.verbose:
+            sys.stderr.write(dirpath+'/\n')
+         if client.make_directory(destpath+dirpath):
+            mkdirs.add(dirpath)
+         else:
+            raise ServiceError(403,'Cannot make target directory: {}'.format(dirpath))
+
+   target = destpath + targetpath
+
+   if verbose:
+      sys.stderr.write(source+' → '+target+'\n')
+   with open(source,'rb') as input:
+      def chunker():
+         sent =0
+         while True:
+            b = input.read(32768)
+            sent += len(b)
+            if not b:
+               if cpargs.verbose:
+                  sys.stderr.write('Sent {} bytes\n'.format(sent))
+               break
+            yield b
+      if not client.copy(chunker() if size<0 else input,target,size=size,overwrite=force):
+         raise ServiceError(403,'Move failed: {} → {}'.format(source,target))
+
+
 def hdfs_cp_command(client,argv):
    cpparser = argparse.ArgumentParser(prog='pyhadoopapi hdfs cp',description="cp")
    cpparser.add_argument(
@@ -144,41 +182,15 @@ def hdfs_cp_command(client,argv):
       # directory copy, glob files
       mkdirs = tracker()
       for pattern in cpargs.paths[:-1]:
-         for source in glob(pattern,recursive=cpargs.recursive):
-            size = os.path.getsize(source)
-            targetpath = source
-            slash = source.rfind('/')
-            if source[0]=='/':
-               targetpath = source[slash+1:]
-            elif source[0:3]=='../':
-               targetpath = source[slash+1:]
-            elif slash > 0 :
-               dirpath = source[0:slash]
-               if dirpath not in mkdirs.values:
-                  if cpargs.verbose:
-                     sys.stderr.write(dirpath+'/\n')
-                  if client.make_directory(destpath+dirpath):
-                     mkdirs.add(dirpath)
-                  else:
-                     raise ServiceError(403,'Cannot make target directory: {}'.format(dirpath))
+         if isfile(pattern):
+            copy_to_destination(client,pattern,destpath,verbose=cpargs.verbose,force=cpargs.force)
+         else:
+            files = glob(pattern,recursive=cpargs.recursive)
+            if len(files)==0 and cpargs.verbose:
+               sys.stderr.write('Nothing matched {}\n'.format(pattern))
+            for source in files:
+               copy_to_destination(client,source,destpath,verbose=cpargs.verbose,force=cpargs.force)
 
-            target = destpath + targetpath
-
-            if cpargs.verbose:
-               sys.stderr.write(source+' → '+target+'\n')
-            with open(source,'rb') as input:
-               def chunker():
-                  sent =0
-                  while True:
-                     b = input.read(32768)
-                     sent += len(b)
-                     if not b:
-                        if cpargs.verbose:
-                           sys.stderr.write('Sent {} bytes\n'.format(sent))
-                        break
-                     yield b
-               if not client.copy(chunker() if size<0 else input,target,size=size,overwrite=cpargs.force):
-                  raise ServiceError(403,'Move failed: {} → {}'.format(source,target))
    elif len(cpargs.paths)==2:
       source = cpargs.paths[0]
       size = os.path.getsize(source) if cpargs.sendsize else -1
@@ -187,6 +199,7 @@ def hdfs_cp_command(client,argv):
             sys.stderr.write(source+'\n')
          if not client.copy(input,destpath,size=size,overwrite=cpargs.force):
             raise ServiceError(403,'Move failed: {} → {}'.format(source,destpath))
+
    else:
       raise ServiceError(400,'Target is not a directory.')
 
