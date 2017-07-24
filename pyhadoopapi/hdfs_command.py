@@ -196,7 +196,7 @@ def hdfs_cp_command(client,argv):
       size = os.path.getsize(source) if cpargs.sendsize else -1
       with open(source,'rb') as input:
          if cpargs.verbose:
-            sys.stderr.write(source+'\n')
+            sys.stderr.write(source+' → '+destpath+'\n')
          if not client.copy(input,destpath,size=size,overwrite=cpargs.force):
             raise ServiceError(403,'Move failed: {} → {}'.format(source,destpath))
 
