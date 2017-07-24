@@ -159,14 +159,26 @@ def submit_command(args):
       metavar=('file or file=target'),
       nargs=1,
       help="A resource to copy (e.g., source or source=dest)")
+   cmdparser.add_argument(
+      '--credential',
+      dest='credential',
+      metavar=('name','type','file.json'),
+      nargs=3,
+      help="defines credential properties (by name)")
+   cmdparser.add_argument(
+      '-v','--verbose',
+      action='store_true',
+      dest='verbose',
+      default=False,
+      help="Verbose")
 
    if len(args.command)==0:
       cmdparser.print_help()
       return
 
    submit_args = cmdparser.parse_args(args.command)
-   print()
-   print(submit_args)
+   #print()
+   #print(submit_args)
 
    client = Oozie(base=args.base,secure=args.secure,host=args.hostinfo[0],port=args.hostinfo[1],gateway=args.gateway,username=args.user[0],password=args.user[1])
    client.proxies = args.proxies
@@ -201,6 +213,12 @@ def submit_command(args):
          files.append((fpath,dest))
 
    action_opts = {}
+   if submit_args.mkdirs is not None or submit_args.deletes is not None:
+      action_opts['prepare'] = Workflow.prepare(
+         *(list(map(lambda x:Workflow.mkdir(x[0]),submit_args.mkdirs)) if submit_args.mkdirs is not None else []
+           +
+           list(map(lambda x:Workflow.delete(x[0]),submit_args.deletes)) if submit_args.deletes is not None else [])
+      )
    if config_properties is not None:
       action_opts['configuration'] = Workflow.configuration(config_properties)
    if submit_args.action=='map-reduce':
@@ -234,18 +252,36 @@ def submit_command(args):
    else:
       action = None
 
+   if submit_args.credential is None:
+      credential_name = None
+   else:
+      credential_name = submit_args.credential[0]
+
    workflow = \
       Workflow.start(submit_args.name,'action') \
               .action(
                  'action',
-                 action
+                 action,
+                 credential=credential_name
               ) \
               .kill('error','Cannot run workflow {}'.format(submit_args.name))
 
-   print()
-   print(str(workflow))
+   if credential_name is not None:
+      with open(submit_args.credential[2]) as propfilein:
+         credential_properties = json.load(propfilein)
+         workflow.credential(credential_name,submit_args.credential[1],credential_properties)
 
-   hdfs.make_directory(submit_args.path)
+   if submit_args.verbose:
+      print()
+      print(str(workflow))
 
-   jobid = client.submit(submit_args.path,properties=properties,workflow=str(workflow),copy=files,verbose=args.verbose)
+   if submit_args.verbose:
+      print('Creating workflow directory: '+submit_args.path)
+
+   if not hdfs.make_directory(submit_args.path):
+      sys.stderr.write('Cannot create '+submit_args.path)
+      return
+
+
+   jobid = client.submit(submit_args.path,properties=properties,workflow=str(workflow),copy=files,verbose=submit_args.verbose)
    print(jobid)

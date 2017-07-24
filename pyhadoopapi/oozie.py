@@ -32,17 +32,17 @@ class XMLWriter:
       self.open_elements = []
 
    def _push(self,name):
-      self.open_elements.append((name,False))
+      self.open_elements.append((name,False,False))
 
    def _pop(self):
       return self.open_elements.pop(-1)
 
-   def _markchild(self):
+   def _markchild(self,text=None):
       if len(self.open_elements)==0:
          return
       current = self.open_elements[-1]
       if not current[1]:
-         self.open_elements[-1] = (current[0],True)
+         self.open_elements[-1] = (current[0],True,current[2] if text is None else text)
          self.io.write('>')
 
    def escape_attr(value):
@@ -58,6 +58,8 @@ class XMLWriter:
 
    def start(self,name,attrs={}):
       self._markchild()
+      for i in range(len(self.open_elements)-1):
+         self.io.write('  ')
       self.io.write('<')
       self.io.write(name)
       for attr in attrs.items():
@@ -72,6 +74,9 @@ class XMLWriter:
    def end(self):
       current = self._pop()
       if current[1]:
+         if not current[2]:
+            for i in range(len(self.open_elements)-1):
+               self.io.write('  ')
          self.io.write('</')
          self.io.write(current[0])
          self.io.write('>')
@@ -80,7 +85,7 @@ class XMLWriter:
       return self
 
    def text(self,value):
-      self._markchild()
+      self._markchild(text=True)
       self.io.write(XMLWriter.escape_text(value))
       return self
 
@@ -197,12 +202,12 @@ class Workflow(XMLSerializable):
       self.items[name] = WorkflowItem(WorkflowItem.Type.END,name,[])
       return self
 
-   def action(self,name,action,ok='end',error='error'):
+   def action(self,name,action,credential=None,ok='end',error='error'):
       if self.start==None:
          self.start = name
       if name in self.items:
          raise ValueError('A workflow item named {} has already been defined.'.format(name))
-      self.items[name] = WorkflowItem(WorkflowItem.Type.ACTION,name,[ok,error],action=action)
+      self.items[name] = WorkflowItem(WorkflowItem.Type.ACTION,name,[ok,error],action=action,credential=credential)
       return self
 
    def switch(self,name,*cases):
@@ -263,7 +268,16 @@ class Workflow(XMLSerializable):
       action.properties = properties
       def to_xml(self,xml):
          xml.start('credential',{'name':self.cred_name,'type':self.cred_type}).newline()
-         xml.child(self.properties)
+         for item in self.properties:
+            if type(item)==dict:
+               for name in item:
+                  value = item[name]
+                  xml.start('property').newline()
+                  xml.named_child('name',name)
+                  xml.named_child('value',value)
+                  xml.end().newline()
+            else:
+               xml.child(item)
          xml.end().newline()
       action.to_xml = types.MethodType(to_xml,action)
       self.credentials.append(action)
@@ -326,7 +340,7 @@ class Workflow(XMLSerializable):
       def to_xml(self,xml):
          xml.start('prepare').newline()
          for item in self.items:
-            item.to_xml(item)
+            item.to_xml(xml)
          xml.end().newline()
       action.to_xml = types.MethodType(to_xml,action)
       return action
@@ -464,7 +478,7 @@ class Workflow(XMLSerializable):
       action.script = script
       action.properties = kwargs
       def to_xml(self,xml):
-         xml.start('hive',{'xmlns':'uri:oozie:hive2-action:0.1'}).newline()
+         xml.start('hive2',{'xmlns':'uri:oozie:hive2-action:0.1'}).newline()
          xml.named_child('job-tracker',self.job_tracker)
          xml.named_child('name-node',self.name_node)
          xml.child(self.properties.get('prepare'))
@@ -567,7 +581,7 @@ class Workflow(XMLSerializable):
       return self
 
    def to_xml(self,xml):
-      xml.start('workflow-app',{'xmlns' : 'uri:oozie:workflow:0.1', 'name' : self.name}).newline()
+      xml.start('workflow-app',{'xmlns' : 'uri:oozie:workflow:0.5', 'name' : self.name}).newline()
       if len(self.credentials)>0:
          xml.start('credentials').newline()
          xml.child(self.credentials)
@@ -576,7 +590,11 @@ class Workflow(XMLSerializable):
          xml.empty('start',{'to':self.start}).newline()
       for item in self.items.values():
          if item.itemType==WorkflowItem.Type.ACTION:
-            xml.start('action',{'name':item.name}).newline()
+            attrs = {'name':item.name}
+            credential = item.properties.get('credential')
+            if credential is not None:
+               attrs['cred'] = str(credential)
+            xml.start('action',attrs).newline()
             action = item.properties.get('action')
             if action is not None:
                action.to_xml(xml)
@@ -624,9 +642,10 @@ class Job:
       if self.path[-1]=='/':
          self.path = self.path[0:-1]
       self.namenode = namenode
+      self.hdfs = self.oozie._hdfsClient()
 
    def copy_resource(self,data,resource_path,overwrite=False):
-      return self.oozie.webhdfs.copy(data,self.path + '/' + resource_path,overwrite=overwrite)
+      return self.hdfs.copy(data,self.path + '/' + resource_path,overwrite=overwrite)
 
    def define_workflow(self,data,overwrite=False):
       if type(data)==Workflow:
@@ -660,11 +679,19 @@ class Oozie(Client):
 
    def __init__(self,base=None,secure=False,host='localhost',port=50070,gateway=None,username=None,password=None,namenode='sandbox',tracker=None):
       super().__init__(service='oozie',base=base,secure=secure,host=host,port=port,gateway=gateway,username=username,password=password)
-      self.webhdfs = WebHDFS(base=base,secure=secure,host=host,port=port,gateway=gateway,username=username,password=password)
       self.properties = {}
       self.defaultNamenode = namenode
       if tracker is not None:
          self.properties[JOB_TRACKER] = tracker
+
+   def _hdfsClient(self):
+      webhdfs = WebHDFS(base=self.base,secure=self.secure,host=self.host,port=self.port,gateway=self.gateway,username=self.username,password=self.password)
+      webhdfs.proxies = self.proxies
+      webhdfs.verify = self.verify
+      if self.verbose:
+         webhdfs.enable_verbose()
+      return webhdfs
+
 
    def addProperty(self,name,value):
       self.properties[name] = value
@@ -716,7 +743,7 @@ class Oozie(Client):
       job = self.newJob(path)
       if workflow is not None:
          if verbose:
-            sys.stderr.write('Copying workflow.xml ..\n')
+            sys.stderr.write('Copying workflow.xml to {} ...\n'.format(path))
          job.define_workflow(workflow,overwrite=True)
       for info in copy:
          if type(info)==tuple:
@@ -730,4 +757,4 @@ class Oozie(Client):
             if verbose:
                sys.stderr.write('{} → {}\n'.format(fpath,dest))
             job.copy_resource(data,dest,overwrite=True)
-      return job.start(properties)
+      return job.start(properties,verbose=verbose)

@@ -23,7 +23,7 @@ def handle_error(err,verbose=False):
    elif err.status_code==404:
       sys.stderr.write('Not found (404)\n')
    else:
-      sys.stderr.write('Status ({})'.format(err.status_code))
+      sys.stderr.write('Status ({})\n'.format(err.status_code))
    sys.stderr.write(err.message)
    sys.stderr.write('\n')
    if verbose and err.request is not None:
@@ -136,7 +136,7 @@ def main():
       sys.stderr.write('\n')
       sys.exit(1)
    except ServiceError as err:
-      handle_error(err)
+      handle_error(err,verbose=args.verbose)
       sys.exit(err.status_code)
    except ProxyError as err:
       sys.stderr.write(str(err))

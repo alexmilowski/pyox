@@ -4,6 +4,7 @@ import argparse
 import sys
 import os
 import json
+from datetime import datetime
 
 def oozie_start_command(client,argv):
    cmdparser = argparse.ArgumentParser(prog='pyhadoopapi oozie start',description='start')
@@ -45,7 +46,7 @@ def oozie_start_command(client,argv):
       metavar=('node[:port]'),
       help="The job tracker for jobs")
    cmdparser.add_argument(
-      '-v',
+      '-v','--verbose',
       action='store_true',
       dest='verbose',
       default=False,
@@ -92,6 +93,13 @@ def oozie_start_command(client,argv):
       jobid = client.submit(args.path,properties=properties,copy=files,verbose=args.verbose)
    print(jobid)
 
+def convert_timestamp(value):
+   return datetime.strptime(value,'%a, %d %b %Y %H:%M:%S GMT').isoformat() if value is not None else None
+
+def message(action):
+   code  = action.get('errorCode')
+   message  = action.get('errorMessage')
+   return code + ': ' + message if code is not None else ''
 def oozie_status_command(client,argv):
    cmdparser = argparse.ArgumentParser(prog='pyhadoopapi oozie status',description='job status')
    cmdparser.add_argument(
@@ -113,6 +121,12 @@ def oozie_status_command(client,argv):
       default=False,
       help="show error messages")
    cmdparser.add_argument(
+      '-e',
+      action='store_true',
+      dest='external_ids',
+      default=False,
+      help="show external ids")
+   cmdparser.add_argument(
       '-s','--show',
       dest='show',
       nargs='?',
@@ -125,12 +139,16 @@ def oozie_status_command(client,argv):
       default=False,
       help="list details")
    cmdparser.add_argument(
+      '-v','--verbose',
+      action='store_true',
+      dest='verbose',
+      default=False,
+      help="Verbose")
+   cmdparser.add_argument(
       'jobids',
       nargs='*',
       help='a list job ids')
    args = cmdparser.parse_args(argv)
-   if not args.raw and args.detailed:
-      print('\t'.join(['JOB','STATUS','USER','PATH','START','END','CODE','MESSAGE']))
 
    for jobid in args.jobids:
       try:
@@ -144,26 +162,34 @@ def oozie_status_command(client,argv):
                sys.stdout.write('\n')
                sys.stdout.write(json.dumps(response,indent=3,sort_keys=True) if args.pretty else json.dumps(response))
                sys.stdout.write('\x1e')
-         elif args.detailed:
-            startTime = response.get('startTime')
-            endTime = response.get('endTime')
-            lastModTime = response.get('lastModTime')
-            createdTime = response.get('createdTime')
-            appPath = response.get('appPath')
-            status = response.get('status')
-            actions = response.get('actions')
-            user = response.get('user')
-            print('\t'.join(map(lambda x:str(x),[jobid,status,user,appPath,startTime,endTime])))
-            if args.actions and actions is not None:
-               for action in actions:
-                  print('\t'.join(map(lambda x:str(x) if x is not None else '',[action.get('id'),action.get('status'),user,action.get('name'),action.get('startTime'),action.get('endTime'),action.get('errorCode'),action.get('errorMessage')])))
          else:
-            status = response.get('status')
-            print('{}\t{}'.format(jobid,status))
             actions = response.get('actions')
-            if args.actions and actions is not None:
-               for action in actions:
-                  print('{}\t{}\t{}\t{}'.format(action.get('id'),action.get('status'),action.get('errorCode'),action.get('errorMessage')))
+            id_format = '{:' + str(max(list(map(lambda action:len(action.get('id')),actions)) + [len(jobid)])) + 's}'
+            if not args.raw and args.detailed:
+               print('\t'.join([id_format.format('JOB'),'{:10s}'.format('STATUS'),'{:10s}'.format('USER'),'{:10s}'.format('NAME'),'{:18s}'.format('START'),'{:18s}'.format('END'),'MESSAGE']))
+            if args.external_ids:
+               if actions is not None:
+                  for action in actions:
+                     print('\t'.join(map(lambda x:str(x) if x is not None else '',[id_format.format(action.get('id')),'{:10s}'.format(action.get('status')),'{:10s}'.format(action.get('name')),action.get('externalId')])))
+            elif args.detailed:
+               startTime = convert_timestamp(response.get('startTime'))
+               endTime = convert_timestamp(response.get('endTime'))
+               lastModTime = convert_timestamp(response.get('lastModTime'))
+               createdTime = convert_timestamp(response.get('createdTime'))
+               appName = response.get('appName')
+               status = response.get('status')
+               user = response.get('user')
+               print('\t'.join(map(lambda x:str(x),[id_format.format(jobid),'{:10s}'.format(status),'{:10s}'.format(user),'{:10s}'.format(appName),startTime,endTime])))
+               if args.actions and actions is not None:
+                  for action in actions:
+                     print('\t'.join(map(lambda x:str(x) if x is not None else '',[id_format.format(action.get('id')),'{:10s}'.format(action.get('status')),'{:10s}'.format(user),'{:10s}'.format(action.get('name')),convert_timestamp(action.get('startTime')),convert_timestamp(action.get('endTime')),message(action)])))
+            else:
+               status = response.get('status')
+               print('{}\t{}'.format(id_format.format(jobid),status))
+               actions = response.get('actions')
+               if args.actions and actions is not None:
+                  for action in actions:
+                     print('{}\t{}\t{}'.format(id_format.format(action.get('id')),'{:10s}'.format(action.get('status')),message(action)))
       except ServiceError as err:
          if err.status_code==404:
             if args.raw:
@@ -216,6 +242,12 @@ def oozie_ls_command(client,argv):
       dest='count',
       metavar=('count'),
       help="The number of items to return")
+   cmdparser.add_argument(
+      '-v','--verbose',
+      action='store_true',
+      dest='verbose',
+      default=False,
+      help="Verbose")
    args = cmdparser.parse_args(argv)
 
    if args.all:
