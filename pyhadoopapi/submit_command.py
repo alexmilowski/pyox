@@ -186,11 +186,7 @@ def submit_command(args):
    if args.verbose:
       client.enable_verbose()
 
-   hdfs = WebHDFS(base=args.base,secure=args.secure,host=args.hostinfo[0],port=args.hostinfo[1],gateway=args.gateway,username=args.user[0],password=args.user[1])
-   hdfs.proxies = args.proxies
-   hdfs.verify = args.verify
-   if args.verbose:
-      hdfs.enable_verbose()
+   hdfs = client.createHDFSClient()
 
    properties = merge_properties(submit_args.properties,submit_args.property)
 

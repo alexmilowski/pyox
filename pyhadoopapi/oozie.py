@@ -513,6 +513,29 @@ class Workflow(XMLSerializable):
       action.to_xml = types.MethodType(to_xml,action)
       return action
 
+   def shell(job_tracker,name_node,command,**kwargs):
+      action = XMLSerializable()
+      action.job_tracker = job_tracker
+      action.name_node = name_node
+      action.command = command
+      action.properties = kwargs
+      def to_xml(self,xml):
+         xml.start('shell',{'xmlns':'uri:oozie:shell-action:0.1'}).newline()
+         xml.named_child('job-tracker',self.job_tracker)
+         xml.named_child('name-node',self.name_node)
+         xml.child(self.properties.get('prepare'))
+         xml.named_child('job-xml',self.properties.get('job_xml'))
+         xml.child(self.properties.get('configuration'))
+         xml.named_child('exec',self.command)
+         xml.named_child('argument',self.properties.get('argument'))
+         xml.named_child('file',self.properties.get('file'))
+         xml.named_child('archive',self.properties.get('archive'))
+         if self.properties.get('capture_output'):
+            xml.start('capture-output').end().newline()
+         xml.end().newline()
+      action.to_xml = types.MethodType(to_xml,action)
+      return action
+
    def sub_workflow(app_path,configuration=None,propagate_configuration=False):
       action = XMLSerializable()
       action.app_path
@@ -539,7 +562,7 @@ class Workflow(XMLSerializable):
       action.to_xml = types.MethodType(to_xml,action)
       return action
 
-   def java(job_tracker,name_node,main_class,script,**kwargs):
+   def java(job_tracker,name_node,main_class,**kwargs):
       action = XMLSerializable()
       action.job_tracker = job_tracker
       action.name_node = name_node
@@ -642,7 +665,7 @@ class Job:
       if self.path[-1]=='/':
          self.path = self.path[0:-1]
       self.namenode = namenode
-      self.hdfs = self.oozie._hdfsClient()
+      self.hdfs = self.oozie.createHDFSClient()
 
    def copy_resource(self,data,resource_path,overwrite=False):
       return self.hdfs.copy(data,self.path + '/' + resource_path,overwrite=overwrite)
@@ -684,7 +707,7 @@ class Oozie(Client):
       if tracker is not None:
          self.properties[JOB_TRACKER] = tracker
 
-   def _hdfsClient(self):
+   def createHDFSClient(self):
       webhdfs = WebHDFS(base=self.base,secure=self.secure,host=self.host,port=self.port,gateway=self.gateway,username=self.username,password=self.password)
       webhdfs.proxies = self.proxies
       webhdfs.verify = self.verify
