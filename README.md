@@ -88,6 +88,79 @@ Options:
  * `-p` - pretty print the JSON
  * `--users` - show user utilization of queues
 
+
+## API
+
+The CLI uses a simple API that you can embed directly in your application.  Every client object has the
+same parameters (all keywords)
+
+ * `base` - the base URI of the knox service
+ * `secure` - whether SSL transport is to be used (defaults to `False`, mutually exclusive with base)
+ * `host` - the host name of the KNOX service (defaults to `localhost`, mutually exclusive with base)
+ * `port` - the port of the KNOX service  (defaults to `50070`, mutually exclusive with base)
+ * `gateway` - the gateway name to username
+ * `username` - the authentication user
+ * `password` - the authentication password
+
+A simple HDFS client example:
+
+```python
+from pyhadoopapi import WebHDFS
+hdfs = WebHDFS(base='https://knox.example.com/',gateway='bigdata',username='jane',password='xyzzy')
+if not hdfs.make_directory('/user/bob/data/'):
+   print('Can not make directory!')
+```
+
+(more documentation is to come!)
+
+## Oozie Workflow DSL
+
+A workflow for a job can be constructed by a DSL.  For example, a simple shell action to copy yarn logs:
+
+```python
+from pyhadoopapi import Oozie, Workflow
+from io import StringIO
+
+# create the oozie client
+oozie = Oozie(base='https://knox.example.com/',gateway='bigdata',username='jane',password='xyzzy')
+
+# create the job directory
+oozie.createHDFSClient().make_directory('/user/jane/shell/')
+
+# a workflow with a single shell aciton
+workflow = \
+   Workflow.start('invoke-shell','shell') \
+      .action(
+         'shell',
+         Workflow.shell(
+            'my-job-tracker','hdfs://sandbox',
+            command,
+            configuration=Workflow.configuration({
+               'mapred.job.queue.name' : 'my-queue'
+            }),
+            argument=['application_1500977774979_2776'],
+            file='/user/jane/shell/copy.sh
+         )
+      ).kill('error','Cannot run workflow shell')
+
+# the script to execute
+script = StringIO("""#!/bin/bash
+yarn logs -applicationId $1 | hdfs dfs -put - /user/jane/shell/job.log
+""")
+
+# Copy whatever is necessary and submit the job via Oozie
+jobid = oozie.submit(
+   '/user/jane/shell/',
+   properties={
+      'oozie.use.system.libpath' : True,
+      'user.name' : 'jane'
+   },
+   workflow=workflow,
+   copy=[(script,'copy.sh')]
+)
+
+```
+
 ## Monitor Web Application
 
 A simple flask application can provide a web UI and proxy to the cluster information and scheduler queues.  The
