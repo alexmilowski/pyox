@@ -1,4 +1,4 @@
-# Python Apache Haddop / Knox REST Client library
+# Python Apache Hadoop / Knox REST Client library
 
 This client library can access the variety of REST APIs provided by Haddop
 either directly or through [Apache Knox](https://knox.apache.org).  The
