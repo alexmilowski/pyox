@@ -1,7 +1,16 @@
-# Python Apache Knox (Hadoop) REST Client library
+# Python Apache Haddop / Knox REST Client library
+
+This client library can access the variety of REST APIs provided by Haddop
+either directly or through [Apache Knox](https://knox.apache.org).  The
+individual protocols are wrapped into classes that know how to interact with
+the protocol and simplify access.  In addition, the usage is uniform regardless
+of whether you access the service directly or through a Knox gateway.
+
+In addition, the library is "proxy aware" in case you have additional network
+proxies.
 
 ## CLI Usage
-
+A simple command-line client allows you to access Knox over the gateway.
 The command-line client can be run by:
 
 ```
@@ -12,6 +21,8 @@ Currently, there are two commands supported:
 
  * `hdfs` - commands for interacting with WebHDFS
  * `oozie` - commands for interacting with the Oozie Service for scheduling jobs
+ * `submit` - a simplified single-action submit command for Oozie
+ * `cluster` - cluster status and queue information
 
 A KNOX gateway must be specified or it defaults to `localhost:50070`:
 
@@ -21,8 +32,12 @@ A KNOX gateway must be specified or it defaults to `localhost:50070`:
  * `--gateway` - the Knox gateway name
  * `--auth` - the username and password (colon separated)
 
- The Knox gateway can either be completely specified by the `--base` option or
- specified in parts by `--secure`, `--host`, and `--gateway`.
+The Knox gateway can either be completely specified by the `--base` option or
+specified in parts by `--secure`, `--host`, and `--gateway`.
+
+A proxy for a protocol can be specified by the `-p` option and requires a protocol
+scheme (e.g., `https`) and the proxy url.
+
 
 ### hdfs commands
 
@@ -110,6 +125,12 @@ hdfs = WebHDFS(base='https://knox.example.com/',gateway='bigdata',username='jane
 if not hdfs.make_directory('/user/bob/data/'):
    print('Can not make directory!')
 ```
+
+There are three main API classes:
+
+ * `WebHDFS` - an HDFS client
+ * `Oozie` - an Oozie workflow client
+ * `ClusterInformation` - a cluster information client
 
 (more documentation is to come!)
 
