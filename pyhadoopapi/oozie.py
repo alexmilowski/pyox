@@ -776,8 +776,13 @@ class Oozie(Client):
             fpath = info
             slash = fpath.rfind('/')
             dest = fpath[slash+1] if slash>=0 else fpath
-         with open(fpath,'rb') as data:
+         if type(fpath)==str:
+            with open(fpath,'rb') as data:
+               if verbose:
+                  sys.stderr.write('{} → {}\n'.format(fpath,dest))
+               job.copy_resource(data,dest,overwrite=True)
+         else:
             if verbose:
-               sys.stderr.write('{} → {}\n'.format(fpath,dest))
-            job.copy_resource(data,dest,overwrite=True)
+               sys.stderr.write('<data> → {}\n'.format(dest))
+            job.copy_resource(fpath,dest,overwrite=True)
       return job.start(properties,verbose=verbose)
