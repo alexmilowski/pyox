@@ -2,6 +2,7 @@ import requests
 import logging
 from requests.auth import HTTPBasicAuth
 import sys
+import base64
 
 try:
    from urllib3.exceptions import InsecureRequestWarning
@@ -50,7 +51,7 @@ class ServiceError(Exception):
 
 class Client:
 
-   def __init__(self,service='',base=None,secure=False,host='localhost',port=50070,gateway=None,username=None,password=None):
+   def __init__(self,service='',base=None,secure=False,host='localhost',port=50070,gateway=None,username=None,password=None,cookies=None,bearer_token=None,bearer_token_encode=True):
       self.service = service
       self.base = base
       if self.base is not None and self.base[-1]!='/':
@@ -61,6 +62,14 @@ class Client:
       self.gateway = gateway
       self.username = username
       self.password = password
+      self.cookies = cookies
+      if bearer_token is not None:
+         if bearer_token_encode:
+            barray = self.bearer_token.encode('utf-8') if type(self.bearer_token)==str else self.bearer_token
+            bearer_token = base64.b64encode(barray.encode('utf-8')).decode('utf-8')
+         self.bearer_auth = 'bearer '+bearer_token
+      else:
+         self.bearer_auth = None
       self.proxies = None
       self.verify = True
       self.verbose = False
@@ -98,7 +107,19 @@ class Client:
          return '{}://{}:{}/gateway/{}/{}/{}'.format(protocol,self.host,self.port,self.gateway,self.service,version)
 
    def auth(self):
-      return HTTPBasicAuth(self.username,self.password) if self.username is not None else None
+      if self.bearer_auth is None:
+         return HTTPBasicAuth(self.username,self.password) if self.username is not None else None
+      else:
+         return None
+
+   def request_headers(self,headers):
+      if self.bearer_auth is not None:
+         if headers is None:
+            headers = {'Authorization':self.bearer_auth}
+         else:
+            headers = headers.copy()
+            headers['Authorization'] = self.bearer_auth
+      return headers
 
    @verbose_log
    def post(self,url,params={},data=None,headers=None):
@@ -106,8 +127,9 @@ class Client:
          url,
          params=params,
          auth=self.auth(),
+         cookies=self.cookies,
          data=data,
-         headers=headers,
+         headers=self.request_headers(headers),
          proxies=self.proxies,
          verify=self.verify)
 
@@ -117,8 +139,9 @@ class Client:
          url,
          params=params,
          auth=self.auth(),
+         cookies=self.cookies,
          data=data,
-         headers=headers,
+         headers=self.request_headers(headers),
          allow_redirects=allow_redirects,
          proxies=self.proxies,
          verify=self.verify)
@@ -129,6 +152,8 @@ class Client:
          url,
          params=params,
          auth=self.auth(),
+         cookies=self.cookies,
+         headers=self.request_headers(None),
          allow_redirects=allow_redirects,
          proxies=self.proxies,
          verify=self.verify)
@@ -139,5 +164,7 @@ class Client:
          url,
          params=params,
          auth=self.auth(),
+         cookies=self.cookies,
+         headers=self.request_headers(None),
          proxies=self.proxies,
          verify=self.verify)

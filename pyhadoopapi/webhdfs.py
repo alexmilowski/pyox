@@ -8,8 +8,9 @@ def absolute_path(path):
 
 class WebHDFS(Client):
 
-   def __init__(self,base=None,secure=False,host='localhost',port=50070,gateway=None,username=None,password=None):
-      super().__init__(service='webhdfs',base=base,secure=secure,host=host,port=port,gateway=gateway,username=username,password=password)
+   def __init__(self,**kwargs):
+      super().__init__(**kwargs)
+      self.service = 'webhdfs'
 
    def list_directory(self,path):
       path = absolute_path(path)

@@ -4,8 +4,9 @@ import sys
 
 class ClusterInformation(Client):
 
-   def __init__(self,base=None,secure=False,host='localhost',port=50070,gateway=None,username=None,password=None,namenode='sandbox',tracker=None):
-      super().__init__(service='resourcemanager',base=base,secure=secure,host=host,port=port,gateway=gateway,username=username,password=password)
+   def __init__(self,**kwargs):
+      super().__init__(**kwargs)
+      self.service='resourcemanager'
 
    def info(self):
       url = '{}/cluster/info'.format(self.service_url())

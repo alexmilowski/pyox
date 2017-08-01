@@ -700,15 +700,18 @@ class Job:
 
 class Oozie(Client):
 
-   def __init__(self,base=None,secure=False,host='localhost',port=50070,gateway=None,username=None,password=None,namenode='sandbox',tracker=None):
-      super().__init__(service='oozie',base=base,secure=secure,host=host,port=port,gateway=gateway,username=username,password=password)
+   def __init__(self,**kwargs):
+      super().__init__(**kwargs)
+      self.service = 'oozie'
       self.properties = {}
-      self.defaultNamenode = namenode
+      self.defaultNamenode = kwargs.get('namenode')
+      tracker = kwargs.get('tracker')
       if tracker is not None:
          self.properties[JOB_TRACKER] = tracker
 
    def createHDFSClient(self):
-      webhdfs = WebHDFS(base=self.base,secure=self.secure,host=self.host,port=self.port,gateway=self.gateway,username=self.username,password=self.password)
+      webhdfs = WebHDFS(base=self.base,secure=self.secure,host=self.host,port=self.port,gateway=self.gateway,username=self.username,password=self.password,cookies=self.cookies)
+      webhdfs.bearer_auth = self.bearer_auth
       webhdfs.proxies = self.proxies
       webhdfs.verify = self.verify
       if self.verbose:
