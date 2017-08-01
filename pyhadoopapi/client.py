@@ -122,7 +122,7 @@ class Client:
       return headers
 
    @verbose_log
-   def post(self,url,params={},data=None,headers=None):
+   def post(self,url,params={},data=None,headers=None,allow_redirects=True):
       return requests.post(
          url,
          params=params,
@@ -130,6 +130,7 @@ class Client:
          cookies=self.cookies,
          data=data,
          headers=self.request_headers(headers),
+         allow_redirects=allow_redirects,
          proxies=self.proxies,
          verify=self.verify)
 
@@ -147,7 +148,7 @@ class Client:
          verify=self.verify)
 
    @verbose_log
-   def get(self,url,params={},allow_redirects=True):
+   def get(self,url,params={},allow_redirects=True,stream=False):
       return requests.get(
          url,
          params=params,
@@ -155,16 +156,18 @@ class Client:
          cookies=self.cookies,
          headers=self.request_headers(None),
          allow_redirects=allow_redirects,
+         stream=stream,
          proxies=self.proxies,
          verify=self.verify)
 
    @verbose_log
-   def delete(self,url,params={}):
+   def delete(self,url,params={},allow_redirects=True):
       return requests.delete(
          url,
          params=params,
          auth=self.auth(),
          cookies=self.cookies,
          headers=self.request_headers(None),
+         allow_redirects=allow_redirects,
          proxies=self.proxies,
          verify=self.verify)
