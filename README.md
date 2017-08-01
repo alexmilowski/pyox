@@ -69,9 +69,7 @@ python -m pyhadoopapi hdfs download [-v] [--offset N] [--length N] [-o file] fil
 
 Options:
 
-  * `--length N` - download N bytes of the file
-  * `-o file` - the output file name
-  * `--offset N` - start at N bytes offset into the file
+  * `--chunk-size N` - download the file in chunks of size N bytes
   * `-v` - verbose (show download status)
 
 #### hdfs ls
