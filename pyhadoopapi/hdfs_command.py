@@ -23,7 +23,7 @@ def hdfs_ls_command(client,argv):
       action='store_true',
       dest='reportbytes',
       default=False,
-      help="Report sizes in binary")
+      help="Report sizes in bytes")
    lsparser.add_argument(
       '-l',
       action='store_true',
@@ -288,7 +288,7 @@ hdfs_commands = {
    'mkdir' : hdfs_mkdir_command,
    'mv' : hdfs_mv_command,
    'rm' : hdfs_rm_command,
-   'cp' : hdfs_cp_command
+   'upload' : hdfs_cp_command
 }
 
 def hdfs_command(args):
