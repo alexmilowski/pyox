@@ -51,7 +51,7 @@ class ServiceError(Exception):
 
 class Client:
 
-   def __init__(self,service='',base=None,secure=False,host='localhost',port=50070,gateway=None,username=None,password=None,cookies=None,bearer_token=None,bearer_token_encode=True):
+   def __init__(self,service='',base=None,secure=False,host='localhost',port=50070,gateway=None,username=None,password=None,cookies=None,bearer_token=None,bearer_token_encode=True,**extrakeywords):
       self.service = service
       self.base = base
       if self.base is not None and self.base[-1]!='/':
