@@ -64,7 +64,7 @@ Options:
 Outputs the file paths to stdout.
 
 ```bash
-python -m pyhadoopapi hdfs download [-v] [--offset N] [--length N] [-o file] file
+python -m pyhadoopapi hdfs download [-v] [--chunk-size N] [-o file] file
 ```
 
 Options:
