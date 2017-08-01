@@ -41,18 +41,103 @@ scheme (e.g., `https`) and the proxy url.
 
 ### hdfs commands
 
-  * `cat` - output the contents of a resource in HDFS
-  * `cp` - copy file(s) to hdfs
-  * `mv` - move files within hdfs
-  * `ls` - list files (long format: -l)
-  * `mkdir` - create directories
-  * `rm` - remove files
-
-For more information on options, use the `-h` option:
-
+```bash
+python -m pyhadoopapi hdfs *command* ...
 ```
-python -m pyhadoopapi hdfs ls -h
+
+#### hdfs cat
+
+Outputs the file paths to stdout.
+
+```bash
+python -m pyhadoopapi hdfs cat [--offset N] [--length N] path ...
 ```
+
+Options:
+
+  * `--length N` - output N bytes of the file
+  * `--offset N` - start at N bytes offset into the file
+
+
+#### hdfs download
+
+Outputs the file paths to stdout.
+
+```bash
+python -m pyhadoopapi hdfs download [-v] [--offset N] [--length N] [-o file] file
+```
+
+Options:
+
+  * `--length N` - download N bytes of the file
+  * `-o file` - the output file name
+  * `--offset N` - start at N bytes offset into the file
+  * `-v` - verbose (show download status)
+
+#### hdfs ls
+
+A directory or file listing.
+
+```bash
+python -m pyhadoopapi hdfs ls [-b] [-l] path ...
+```
+
+Options:
+
+  * `-b` - show the file sizes in bytes
+  * `-l` - show the file details (long format)
+
+#### hdfs mkdir
+
+Create directories
+
+```bash
+python -m pyhadoopapi hdfs mkdir path ...
+```
+
+#### hdfs mv
+
+Move a file
+
+```bash
+python -m pyhadoopapi hdfs mv source destination
+```
+
+#### hdfs rm
+
+Move a file
+
+```bash
+python -m pyhadoopapi hdfs rm [-r] path ...
+```
+
+Options:
+
+  * `-r` - recursively remove files
+
+
+#### hdfs upload
+
+Copy a set of files/direcrories to the target destination.
+
+```bash
+python -m pyhadoopapi hdfs upload [-f] [-r] [-s] [-v] source ... destination/
+```
+
+Copy a single file to a destination.
+
+```bash
+python -m pyhadoopapi hdfs upload [-f] [-s] [-v] source destination
+```
+
+Options:
+
+  * `-f` - force (overwrite files)
+  * `-r` - recursively upload
+  * `-s` - send file size
+  * `-v` - verbose (show download status)
+
+
 
 ### oozie commands
 
