@@ -705,6 +705,8 @@ class Oozie(Client):
       self.service = 'oozie'
       self.properties = {}
       self.defaultNamenode = kwargs.get('namenode')
+      if self.defaultNamenode is None:
+         self.defaultNamenode = 'sandbox'
       tracker = kwargs.get('tracker')
       if tracker is not None:
          self.properties[JOB_TRACKER] = tracker
