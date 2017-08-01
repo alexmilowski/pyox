@@ -6,6 +6,7 @@ import sys
 import os
 from os.path import isfile
 from glob import glob
+from math import ceil
 
 class tracker:
 
@@ -73,10 +74,87 @@ def hdfs_ls_command(client,argv):
          print(fspec.format(name,fsize,modtime.isoformat()))
 
 def hdfs_cat_command(client,argv):
-   for path in argv:
-      input = client.open(path)
+   catparser = argparse.ArgumentParser(prog='pyhadoopapi hdfs cat',description="cat")
+   catparser.add_argument(
+      '--offset',
+      type=int,
+      metavar=('int'),
+      help="a byte offset for the file")
+   catparser.add_argument(
+      '--length',
+      type=int,
+      metavar=('int'),
+      help="the byte length to retrieve")
+   catparser.add_argument(
+      'paths',
+      nargs='*',
+      help='a list of paths')
+   args = catparser.parse_args(argv)
+   for path in args.paths:
+      input = client.open(path,offset=args.offset,length=args.length)
       for chunk in input:
          sys.stdout.buffer.write(chunk)
+
+def hdfs_download_command(client,argv):
+   dlparser = argparse.ArgumentParser(prog='pyhadoopapi hdfs download',description="download")
+   dlparser.add_argument(
+      '--chunk-size',
+      dest='chunk_size',
+      type=int,
+      metavar=('int'),
+      help="The chunk size for the download")
+   dlparser.add_argument(
+      '-o','--output',
+      dest='output',
+      metavar=('file'),
+      help="the output file")
+   dlparser.add_argument(
+      '-v',
+      action='store_true',
+      dest='verbose',
+      default=False,
+      help="Verbose")
+   dlparser.add_argument(
+      'source',
+      help='the remote source')
+   args = dlparser.parse_args(argv)
+   destination = args.output
+   if destination is None:
+      last = args.source.rfind('/')
+      destination = args.source[last+1:] if last>=0 else args.source
+   if args.chunk_size is not None:
+      info = client.status(args.source)
+      remaining = info['length']
+      offset = 0
+      chunk = 0
+      chunks = ceil(remaining/args.chunk_size)
+      if args.verbose:
+         sys.stderr.write('File size: {}\n'.format(remaining))
+      with open(destination,'wb') as output:
+         while remaining>0:
+            chunk += 1
+            if args.verbose:
+               sys.stderr.write('Downloading chunk {}/{} '.format(chunk,chunks))
+               sys.stderr.flush()
+            length = args.chunk_size if remaining>args.chunk_size else remaining
+            input = client.open(args.source,offset=offset,length=length)
+            for data in input:
+               output.write(data)
+               if args.verbose:
+                  sys.stderr.write('.')
+                  sys.stderr.flush()
+
+            if args.verbose:
+               sys.stderr.write('\n')
+               sys.stderr.flush()
+
+            remaining -= length
+
+   else:
+      input = client.open(args.source)
+      with open(destination,'wb') as output:
+         for chunk in input:
+            output.write(chunk)
 
 def hdfs_mkdir_command(client,argv):
    for path in argv:
@@ -206,6 +284,7 @@ def hdfs_cp_command(client,argv):
 hdfs_commands = {
    'ls' : hdfs_ls_command,
    'cat' : hdfs_cat_command,
+   'download' : hdfs_download_command,
    'mkdir' : hdfs_mkdir_command,
    'mv' : hdfs_mv_command,
    'rm' : hdfs_rm_command,
