@@ -143,12 +143,14 @@ def hdfs_download_command(client,argv):
                if args.verbose:
                   sys.stderr.write('.')
                   sys.stderr.flush()
+            output.flush()
 
             if args.verbose:
                sys.stderr.write('\n')
                sys.stderr.flush()
 
             remaining -= length
+            offset += length
 
    else:
       input = client.open(args.source)
