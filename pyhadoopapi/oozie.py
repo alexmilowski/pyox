@@ -657,7 +657,7 @@ class Workflow(XMLSerializable):
 
 
 class Job:
-   def __init__(self,oozie,path,namenode='sandbox'):
+   def __init__(self,oozie,path,namenode='sandbox',verbose=False):
       self.oozie = oozie
       self.path = path
       if self.path[0]!='/':
@@ -666,6 +666,13 @@ class Job:
          self.path = self.path[0:-1]
       self.namenode = namenode
       self.hdfs = self.oozie.createHDFSClient()
+      self.verbose = verbose
+      if self.verbose:
+         sys.stderr.write('Creating workflow directory {} ...\n'.format(path))
+
+      if not self.hdfs.make_directory(path):
+         sys.stderr.write('Cannot create {}\n'.format(path))
+         return
 
    def copy_resource(self,data,resource_path,overwrite=False):
       return self.hdfs.copy(data,self.path + '/' + resource_path,overwrite=overwrite)
@@ -692,7 +699,7 @@ class Job:
          write_property(xml,NAMENODE,'hdfs://{}'.format(self.namenode))
       xml.write('</configuration>\n')
 
-      if verbose:
+      if verbose or self.verbose:
          sys.stderr.write(xml.getvalue())
          sys.stderr.write('\n')
          sys.stderr.write('Requesting job start...\n')
@@ -727,8 +734,8 @@ class Oozie(Client):
    def removeProperty(self,name):
       return self.property.pop(name,None)
 
-   def newJob(self,path,namenode=None):
-      return Job(self,path,namenode=namenode if namenode is not None else self.defaultNamenode)
+   def newJob(self,path,namenode=None,verbose=False):
+      return Job(self,path,namenode=namenode if namenode is not None else self.defaultNamenode,verbose=verbose)
 
    def start(self,xml):
       headers = {'Content-Type' : 'application/xml; charset=UTF-8'}
@@ -765,10 +772,11 @@ class Oozie(Client):
       if req.status_code==200:
          return response_data(req)
       else:
-         raise ServiceError(req.status_code,'Cannot list jobs'.format(jobid),request=req)
+         raise ServiceError(req.status_code,'Cannot list jobs',request=req)
 
    def submit(self,path,properties=None,workflow=None,copy=[],verbose=False):
-      job = self.newJob(path)
+
+      job = self.newJob(path,verbose=verbose)
       if workflow is not None:
          if verbose:
             sys.stderr.write('Copying workflow.xml to {} ...\n'.format(path))
