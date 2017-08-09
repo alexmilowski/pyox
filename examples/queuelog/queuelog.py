@@ -1,5 +1,4 @@
-from pyredis import Client
-from pyhadoopapi import ClusterInformation
+from pyhadoopapi import ClusterInformation, ServiceError
 import argparse
 import sys
 import signal
