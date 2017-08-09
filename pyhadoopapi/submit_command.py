@@ -271,13 +271,6 @@ def submit_command(args):
       print()
       print(str(workflow))
 
-   if submit_args.verbose:
-      print('Creating workflow directory: '+submit_args.path)
-
-   if not hdfs.make_directory(submit_args.path):
-      sys.stderr.write('Cannot create '+submit_args.path)
-      return
-
 
    jobid = client.submit(submit_args.path,properties=properties,workflow=str(workflow),copy=files,verbose=submit_args.verbose)
    print(jobid)
