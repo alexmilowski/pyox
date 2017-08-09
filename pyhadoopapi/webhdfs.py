@@ -52,7 +52,7 @@ class WebHDFS(Client):
       else:
          raise ServiceError(open_req.status_code,'Cannot open path {}'.format(path),open_req)
 
-   def make_directory(self,permission=None):
+   def make_directory(self,path,permission=None):
       path = absolute_path(path)
       url = '{}{}?op=MKDIRS'.format(self.service_url(),path)
       if permission is not None:
