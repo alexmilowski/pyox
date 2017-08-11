@@ -2,3 +2,7 @@
 include LICENSE.txt
 
 # Include the data files
+
+include pyhadoopapi/apps/monitor/templates/*.html
+include pyhadoopapi/apps/monitor/assets/css/*.css
+include pyhadoopapi/apps/monitor/assets/js/*.js
