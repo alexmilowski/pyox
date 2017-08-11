@@ -89,6 +89,22 @@ parser.add_argument(
    default='queue',
    help="The prefix to use for the queue log files")
 parser.add_argument(
+   '--log-max',
+   dest='log_max',
+   type=int,
+   default=100*1024*1024,
+   help="The log file size max")
+parser.add_argument(
+   '--log-period-type',
+   dest='log_period_type',
+   help="The log by period type")
+parser.add_argument(
+   '--log-period-interval',
+   type=int,
+   dest='log_period_interval',
+   default=1,
+   help="The log by period iterval")
+parser.add_argument(
    '-q','--quiet',
    dest='quiet',
    action='store_true',
@@ -134,10 +150,6 @@ logger = logging.getLogger(__name__)
 def default_client(parameters):
    def handler(info):
       logger.info(json.dumps(info))
-      #sys.stdout.write('\x1e')
-      #sys.stdout.write(json.dumps(info))
-      #sys.stdout.write('\n')
-      #sys.stdout.flush()
    return handler
 
 parts = args.client.rsplit('.', 1)
@@ -179,7 +191,7 @@ else:
             'class' : 'logging.handlers.RotatingFileHandler',
             'formatter' : 'jsonseq',
             'filename' : args.log_prefix + '.log',
-            'maxBytes' : 100*1024*1024,
+            'maxBytes' : args.log_max,
             'encoding' : 'utf-8'
          }
       },
@@ -196,6 +208,16 @@ else:
    if not args.log_enabled:
       config['loggers']['']['handlers'].remove('file')
       config['handlers'].pop('file')
+   if args.log_period_type is not None:
+      config['handlers']['file'] = {
+         'level' : 'INFO',
+         'class' : 'logging.handlers.TimedRotatingFileHandler',
+         'formatter' : 'jsonseq',
+         'filename' : args.log_prefix + '.log',
+         'when' : args.log_period_type,
+         'interval' : args.log_period_interval,
+         'encoding' : 'utf-8'
+      }
 
    logging.config.dictConfig(config)
 
