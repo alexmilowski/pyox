@@ -3,6 +3,8 @@ import logging
 from requests.auth import HTTPBasicAuth
 import sys
 import base64
+import argparse
+from types import FunctionType
 
 try:
    from urllib3.exceptions import InsecureRequestWarning
@@ -171,3 +173,105 @@ class Client:
          allow_redirects=allow_redirects,
          proxies=self.proxies,
          verify=self.verify)
+
+def parseAuth(value):
+   if value is None or len(value)==0:
+      return (None,None)
+   else:
+      colon = value.find(':')
+      if colon<0:
+         return (value,None)
+      else:
+         return (value[0:colon],value[colon+1:])
+
+def parseHost(value):
+   if value is None or len(value)==0:
+      return (None,None)
+   else:
+      colon = value.find(':')
+      if colon<0:
+         return (value,None)
+      else:
+         return (value[0:colon],int(value[colon+1:]))
+
+def parse_args(*params,**kwargs):
+   if params is None or len(params)==0:
+      params = sys.argv[1:]
+   elif len(params)==1 and type(params[0])==list:
+      params = params[0]
+
+   parser = argparse.ArgumentParser(prog=kwargs.get('prog'),description=kwargs.get('description'))
+
+   parser.add_argument(
+        '--base',
+        nargs="?",
+        help="The base URI of the service")
+   parser.add_argument(
+        '--host',
+        nargs="?",
+        default='localhost',
+        help="The host of the service (may include port)")
+   parser.add_argument(
+        '--secure',
+        action='store_true',
+        default=False,
+        help="Use TLS transport (https)")
+   parser.add_argument(
+        '--gateway',
+        nargs="?",
+        help="The KNOX gateway name")
+   parser.add_argument(
+      '--auth',
+       help="The authentication for the request (colon separated username/password)")
+   parser.add_argument(
+      '-p','--proxy',
+      dest='proxies',
+      action='append',
+      metavar=('protocol','url'),
+      nargs=2,
+      help="A protocol proxy")
+   parser.add_argument(
+      '--no-verify',
+      dest='verify',
+      action='store_false',
+      default=True,
+      help="Do not verify SSL certificates")
+   parser.add_argument(
+      '-v','--verbose',
+      dest='verbose',
+      action='store_true',
+      default=False,
+      help="Output detailed information about the request and response")
+
+   customizer = kwargs.get('customizer')
+   if customizer is not None:
+      if type(customizer)!=FunctionType:
+         raise ValueError('customizer is not a function: {}'.format(type(customizer)))
+      customizer(parser)
+
+   args = parser.parse_args(params)
+
+   if args.proxies is not None:
+      pdict = {}
+      for pdef in args.proxies:
+         pdict[pdef[0]] = pdef[1]
+      args.proxies = pdict
+
+   args.user = parseAuth(args.auth)
+   args.hostinfo = parseHost(args.host)
+
+   return args
+
+def make_client(kclass,*params,**kwargs):
+   args = parse_args(*params,**kwargs)
+   client = kclass(base=args.base,secure=args.secure,host=args.hostinfo[0],port=args.hostinfo[1],gateway=args.gateway,username=args.user[0],password=args.user[1])
+   client.proxies = args.proxies
+   client.verify = args.verify
+   if args.verbose:
+      client.enable_verbose()
+   customizer = kwargs.get('customizer')
+   if customizer is not None:
+      if type(customizer)!=FunctionType:
+         raise ValueError('customizer is not a function: {}'.format(type(customizer)))
+      customizer(client,args)
+   return client
