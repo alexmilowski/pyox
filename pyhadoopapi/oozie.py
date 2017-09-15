@@ -46,10 +46,10 @@ class XMLWriter:
          self.io.write('>')
 
    def escape_attr(value):
-      return value.replace('"','&quot;').replace('&','&amp;')
+      return str(value).replace('"','&quot;').replace('&','&amp;')
 
    def escape_text(value):
-      return value.replace('&','&amp;').replace('<','&lt;')
+      return str(value).replace('&','&amp;').replace('<','&lt;')
 
    def empty(self,name,attrs={}):
       self.start(name,attrs)
@@ -202,12 +202,12 @@ class Workflow(XMLSerializable):
       self.items[name] = WorkflowItem(WorkflowItem.Type.END,name,[])
       return self
 
-   def action(self,name,action,credential=None,ok='end',error='error'):
+   def action(self,name,action,credential=None,ok='end',error='error',retry=None):
       if self.start==None:
          self.start = name
       if name in self.items:
          raise ValueError('A workflow item named {} has already been defined.'.format(name))
-      self.items[name] = WorkflowItem(WorkflowItem.Type.ACTION,name,[ok,error],action=action,credential=credential)
+      self.items[name] = WorkflowItem(WorkflowItem.Type.ACTION,name,[ok,error],action=action,credential=credential,retry=retry)
       return self
 
    def switch(self,name,*cases):
@@ -617,6 +617,10 @@ class Workflow(XMLSerializable):
             credential = item.properties.get('credential')
             if credential is not None:
                attrs['cred'] = str(credential)
+            retry = item.properties.get('retry')
+            if retry is not None:
+               attrs['retry-max'] = retry[0]
+               attrs['retry-interval'] = retry[1]
             xml.start('action',attrs).newline()
             action = item.properties.get('action')
             if action is not None:
