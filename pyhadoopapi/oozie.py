@@ -192,6 +192,7 @@ class Workflow(XMLSerializable):
       self.items = {}
       self.credentials = []
       self.end('end')
+      self.last_action = None
 
    def start(name,start):
       w = Workflow(name,start)
@@ -202,12 +203,15 @@ class Workflow(XMLSerializable):
       self.items[name] = WorkflowItem(WorkflowItem.Type.END,name,[])
       return self
 
-   def action(self,name,action,credential=None,ok='end',error='error',retry=None):
+   def action(self,name,action,credential=None,ok=None,error='error',retry=None):
       if self.start==None:
          self.start = name
       if name in self.items:
          raise ValueError('A workflow item named {} has already been defined.'.format(name))
       self.items[name] = WorkflowItem(WorkflowItem.Type.ACTION,name,[ok,error],action=action,credential=credential,retry=retry)
+      if self.last_action is not None:
+         self.last_action.targets[0] = name
+      self.last_action = self.items[name]
       return self
 
    def switch(self,name,*cases):
@@ -625,7 +629,10 @@ class Workflow(XMLSerializable):
             action = item.properties.get('action')
             if action is not None:
                action.to_xml(xml)
-            xml.empty('ok',{'to':item.targets[0]}).newline() \
+            ok = item.targets[0]
+            if ok is None:
+               ok = self.end
+            xml.empty('ok',{'to':ok}).newline() \
                .empty('error',{'to':item.targets[1]}).newline() \
                .end().newline()
          elif item.itemType==WorkflowItem.Type.SWITCH:
