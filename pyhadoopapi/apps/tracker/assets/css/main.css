@@ -1,0 +1,66 @@
+main {
+   margin: 1em 1em;
+}
+
+.queue-list .level-1 {
+   margin-left: 20px;
+}
+
+.queue-list .level-2 {
+   margin-left: 20px;
+}
+
+.queue-list .level-3 {
+   margin-left: 20px;
+}
+
+.queue-list .level-4 {
+   margin-left: 20px;
+}
+
+.queue-list .level-5 {
+   margin-left: 20px;
+}
+
+.cluster-info {
+   display: flex;
+}
+
+.cluster-info section {
+   width: 25%;
+   margin-right: 1em;
+   border: 1px solid rgba(29,29,29,0.5);
+   padding: 0.5em 0.5em;
+}
+
+.cluster-info section h2 {
+   text-align: center;
+}
+
+#queues {
+   margin-top: 2em;
+}
+
+#queues a.button:link, #queues a.button:visited {
+   color: #1d1d1d;
+}
+
+#refresh-value {
+   font-size: 0.5em;
+}
+
+#job-list {
+   margin-left: 30px;
+}
+
+#tracking .loading {
+   text-align: center;
+}
+
+#tracking a.button:link, #tracking a.button:visited {
+   color: #1d1d1d;
+}
+
+a[uk-icon] {
+   vertical-align: 0.125em;
+}

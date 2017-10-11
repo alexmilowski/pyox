@@ -1,0 +1,151 @@
+<!-- extend from base layout -->
+{% extends "base.html" %}
+
+{% block head %}
+<link rel="stylesheet" href="/assets/css/c3.min.css" type="text/css">
+<script src="/assets/js/d3.min.js"></script>
+<script src="/assets/js/c3.min.js"></script>
+<script src="/assets/js/queues.js"></script>
+<script src="/assets/js/tracking.js"></script>
+{% endblock %}
+
+{% block content %}
+<h1>Tracker Service</h1>
+
+<ul uk-tab>
+   <li class="uk-active">
+   <a href="#">Status</a>
+   </li>
+   <li class="uk-active">
+   <a href="#">Track Job</a>
+   </li>
+</ul>
+<ul class="uk-switcher">
+
+<li>
+<section id="tracking">
+<h2>Tracking
+   <a href="#" class="button refresh" title="Refresh" uk-icon="icon: refresh"></a>
+</h2>
+<table class="uk-table uk-table-hover uk-table-small uk-table-justify">
+<thead>
+   <tr>
+      <th>ID</th>
+      <th>Status</th>
+      <th>Applications</th>
+   </tr>
+</thead>
+<tbody>
+   <tr><td colspan="4"></td></tr>
+</tbody>
+</table>
+</section>
+</li>
+
+<li>
+   <section id="track-job">
+      <form>
+         <fieldset class="uk-fieldset">
+            <legend class="uk-legend">Track a Job</legend>
+            <div class="uk-margin">
+               <input class="uk-input" name="id" type="text" placeholder="Oozie Job ID">
+            </div>
+            <button class="uk-button uk-button-default">Track<span id="track-job-working"></span></button>
+         </fieldset>
+      </form>
+   </section>
+</li>
+</ul>
+
+<section>
+<h2>Cluster</h2>
+<p>Hadoop <span id="cluster-info">{{info['hadoopVersion']}} {{info['state']}} {{info['startedOn']}}</span></p>
+
+<section class="cluster-info">
+<section id="applications">
+<h3>Applications<span id="cluster-metrics-refresh"></span></h3>
+<table class="uk-table uk-table-hover uk-table-small uk-table-justify">
+<tbody>
+   <tr><td class="uk-table-shrink">Submitted</td><td>{{metrics['appsSubmitted']}}</td></tr>
+   <tr><td>Completed</td><td>{{metrics['appsSubmitted']}}</td></tr>
+   <tr><td>Pending</td><td>{{metrics['appsPending']}}</td></tr>
+   <tr><td>Running</td><td>{{metrics['appsRunning']}}</td></tr>
+   <tr><td>Failed</td><td>{{metrics['appsFailed']}}</td></tr>
+   <tr><td>Killed</td><td>{{metrics['appsKilled']}}</td></tr>
+</tbody>
+</table>
+</section>
+<section id="memory">
+<h3>Memory</h3>
+<table class="uk-table uk-table-hover uk-table-small uk-table-justify">
+<tbody>
+   <tr><td class="uk-table-shrink">Reserved</td><td>{{metrics['reservedMB']}}MB</td></tr>
+   <tr><td>Available</td><td>{{metrics['availableMB']}}MB</td></tr>
+   <tr><td>Allocated</td><td>{{metrics['allocatedMB']}}MB</td></tr>
+   <tr><td>Total</td><td>{{metrics['totalMB']}}MB</td></tr>
+</tbody>
+</table>
+</section>
+<section id="cores">
+<h3>Cores</h3>
+<table class="uk-table uk-table-hover uk-table-small uk-table-justify">
+<tbody>
+   <tr><td class="uk-table-shrink">Reserved</td><td>{{metrics['reservedVirtualCores']}}</td></tr>
+   <tr><td>Available</td><td>{{metrics['availableVirtualCores']}}</td></tr>
+   <tr><td>Allocated</td><td>{{metrics['allocatedVirtualCores']}}</td></tr>
+   <tr><td>Total</td><td>{{metrics['totalVirtualCores']}}</td></tr>
+</tbody>
+</table>
+</section>
+<section id="containers">
+<h3>Containers</h3>
+<table class="uk-table uk-table-hover uk-table-small uk-table-justify">
+<tbody>
+   <tr><td class="uk-table-shrink">Reserved</td><td>{{metrics['containersReserved']}}</td></tr>
+   <tr><td>Allocated</td><td>{{metrics['containersAllocated']}}</td></tr>
+   <tr><td>Pending</td><td>{{metrics['containersPending']}}</td></tr>
+</tbody>
+</table>
+</section>
+<section id="nodes">
+<h3>Nodes</h3>
+<table class="uk-table uk-table-hover uk-table-small uk-table-justify">
+<tbody>
+   <tr><td class="uk-table-shrink">Active</td><td>{{metrics['activeNodes']}}</td></tr>
+   <tr><td>Lost</td><td>{{metrics['lostNodes']}}</td></tr>
+   <tr><td>Unhealthy</td><td>{{metrics['unhealthyNodes']}}</td></tr>
+   <tr><td>Rebooted</td><td>{{metrics['rebootedNodes']}}</td></tr>
+   <tr><td>Decommissioned</td><td>{{metrics['decommissionedNodes']}}</td></tr>
+   <tr><td>Total</td><td>{{metrics['totalNodes']}}</td></tr>
+</tbody>
+</table>
+</section>
+</section>
+
+<section id="queues">
+   <h3>Queues
+      <a href="#" class="button refresh" title="Refresh" uk-icon="icon: refresh"></a>
+      <a href="#" class="button play-pause" title="Automatically Refresh" uk-icon="icon: play"></a>
+      <span id="refresh-value">2s</span>
+      <input id="refresh-rate" type="range" min="1" max="60" value="2">
+      <span id="queue-refresh"></span>
+   </h3>
+   <div id="queue-view"></div>
+   <table id="job-list" class="uk-table uk-table-hover uk-table-small uk-table-justify">
+      <thead>
+         <tr>
+            <th class="uk-table-shrink">Queue</th>
+            <th class="uk-table-shrink">Username</th>
+            <th class="uk-table-shrink">Active</th>
+            <th class="uk-table-shrink">Pending</th>
+            <th class="uk-table-shrink">Memory</th>
+            <th class="uk-table-shrink">Cores</th>
+            <th class="uk-table-expand">Limit</th>
+         </tr>
+      </thead>
+      <tbody>
+      </tbody>
+   </table>
+</section>
+</section>
+{% endblock %}
