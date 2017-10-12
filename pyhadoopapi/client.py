@@ -256,6 +256,18 @@ def parse_args(*params,**kwargs):
       default=False,
       help="Output progress information about the operations")
 
+   argument_specs = kwargs.get('arguments')
+   if argument_specs is not None:
+      for spec in argument_specs:
+         if type(spec)==str:
+            parser.add_argument(spec)
+         else:
+            a = []
+            for n in spec:
+               if type(n)==str:
+                  a.append(n)
+            parser.add_argument(*a,**spec[-1])
+
    customizer = kwargs.get('customizer')
    if customizer is not None:
       if type(customizer)!=FunctionType:
@@ -304,9 +316,26 @@ def parse_args(*params,**kwargs):
    args.user = parseAuth(args.auth)
    args.hostinfo = parseHost(args.host)
 
-
-
    return args
+
+class custom_params():
+   def __str__(self):
+      s='{'
+      first = True
+      for attr in dir(self):
+         if not first:
+            s += ', '
+         if attr[0:2]!='__':
+            value = getattr(self,attr)
+            if type(value)==str:
+               value = '\'' + value.replace('\'','\\\'')+ '\''
+            else:
+               value = str(value)
+            s += "'{}'".format(attr)+':'+value
+            first = False
+      s += '}'
+      return s
+
 
 def make_client(kclass,*params,**kwargs):
    args = parse_args(*params,**kwargs)
@@ -321,4 +350,16 @@ def make_client(kclass,*params,**kwargs):
       if type(customizer)!=FunctionType:
          raise ValueError('customizer is not a function: {}'.format(type(customizer)))
       customizer(client,args)
-   return client
+   argument_specs = kwargs.get('arguments')
+   arguments = None
+   if argument_specs is not None:
+      arguments = custom_params()
+      for spec in argument_specs:
+         if type(spec)==str:
+            setattr(arguments,spec,getattr(args,spec))
+         else:
+            name = spec[-1].get('dest')
+            if name is not None:
+               setattr(arguments,name,getattr(args,name))
+
+   return client if arguments is None else (client,arguments)
