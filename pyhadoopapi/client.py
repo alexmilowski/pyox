@@ -2,6 +2,7 @@ import requests
 import logging
 from requests.auth import HTTPBasicAuth
 import sys
+import os
 import base64
 import argparse
 from types import FunctionType
@@ -10,6 +11,11 @@ try:
    from urllib3.exceptions import InsecureRequestWarning
    import urllib3
    urllib3.disable_warnings(InsecureRequestWarning)
+except ImportError:
+   pass
+try:
+   from requests.packages.urllib3.exceptions import InsecureRequestWarning
+   requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
 except ImportError:
    pass
 
@@ -75,6 +81,7 @@ class Client:
       self.proxies = None
       self.verify = True
       self.verbose = False
+      self.progress = False
 
    def enable_verbose(self):
       self.verbose = True;
@@ -242,6 +249,12 @@ def parse_args(*params,**kwargs):
       action='store_true',
       default=False,
       help="Output detailed information about the request and response")
+   parser.add_argument(
+      '-i','--progress-information',
+      dest='progress',
+      action='store_true',
+      default=False,
+      help="Output progress information about the operations")
 
    customizer = kwargs.get('customizer')
    if customizer is not None:
@@ -250,6 +263,37 @@ def parse_args(*params,**kwargs):
       customizer(parser)
 
    args = parser.parse_args(params)
+
+   check_env = kwargs.get('disable_environ')
+   if check_env is None or check_env:
+      if args.base is None:
+         args.base = os.environ.get('HADOOP_BASE')
+      if args.host is None:
+         args.host = os.environ.get('HADOOP_HOST')
+      if args.gateway is None:
+         args.gateway = os.environ.get('HADOOP_GATEWAY')
+      if args.auth is None:
+         args.auth = os.environ.get('HADOOP_AUTH')
+      if args.proxies is None:
+         http_proxy = os.environ.get('HADOOP_PROXY_HTTP')
+         https_proxy = os.environ.get('HADOOP_PROXY_HTTPS')
+         if http_proxy is not None:
+            args.proxies = [('http',http_proxy)]
+         if https_proxy is not None:
+            if args.proxies is None:
+               args.proxies = [('https',https_proxy)]
+            else:
+               args.proxies.append(('https',https_proxy))
+      try:
+         sys.argv.index('--no-verify')
+      except ValueError:
+         value = os.environ.get('HADOOP_VERIFY')
+         args.verify = value=='True' or value=='true'
+      try:
+         sys.argv.index('--secure')
+      except ValueError:
+         value = os.environ.get('HADOOP_SECURE')
+         args.secure = value=='True' or value=='true'
 
    if args.proxies is not None:
       pdict = {}
@@ -260,6 +304,8 @@ def parse_args(*params,**kwargs):
    args.user = parseAuth(args.auth)
    args.hostinfo = parseHost(args.host)
 
+
+
    return args
 
 def make_client(kclass,*params,**kwargs):
@@ -267,6 +313,7 @@ def make_client(kclass,*params,**kwargs):
    client = kclass(base=args.base,secure=args.secure,host=args.hostinfo[0],port=args.hostinfo[1],gateway=args.gateway,username=args.user[0],password=args.user[1])
    client.proxies = args.proxies
    client.verify = args.verify
+   client.progress = args.progress
    if args.verbose:
       client.enable_verbose()
    customizer = kwargs.get('customizer')

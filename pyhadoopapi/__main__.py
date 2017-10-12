@@ -108,6 +108,36 @@ def main():
 
    args = parser.parse_args()
 
+   if args.base is None:
+      args.base = os.environ.get('HADOOP_BASE')
+   if args.host is None:
+      args.host = os.environ.get('HADOOP_HOST')
+   if args.gateway is None:
+      args.gateway = os.environ.get('HADOOP_GATEWAY')
+   if args.auth is None:
+      args.auth = os.environ.get('HADOOP_AUTH')
+   if args.proxies is None:
+      http_proxy = os.environ.get('HADOOP_PROXY_HTTP')
+      https_proxy = os.environ.get('HADOOP_PROXY_HTTPS')
+      if http_proxy is not None:
+         args.proxies = [('http',http_proxy)]
+      if https_proxy is not None:
+         if args.proxies is None:
+            args.proxies = [('https',https_proxy)]
+         else:
+            args.proxies.append(('https',https_proxy))
+   try:
+      sys.argv.index('--no-verify')
+   except ValueError:
+      value = os.environ.get('HADOOP_VERIFY')
+      args.verify = value=='True' or value=='true'
+   try:
+      sys.argv.index('--secure')
+   except ValueError:
+      value = os.environ.get('HADOOP_SECURE')
+      args.secure = value=='True' or value=='true'
+
+
    if args.proxies is not None:
       pdict = {}
       for pdef in args.proxies:
