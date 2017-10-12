@@ -4,6 +4,8 @@ from io import StringIO
 from enum import auto,Enum
 import sys
 import types
+import requests
+import json
 
 JOB_TRACKER = 'jobTracker'
 NAMENODE = 'nameNode'
@@ -678,6 +680,7 @@ class Job:
       self.namenode = namenode
       self.hdfs = self.oozie.createHDFSClient()
       self.verbose = verbose
+      self.progress = self.oozie.progress
       if self.verbose:
          sys.stderr.write('Creating workflow directory {} ...\n'.format(path))
 
@@ -713,6 +716,7 @@ class Job:
       if verbose or self.verbose:
          sys.stderr.write(xml.getvalue())
          sys.stderr.write('\n')
+      if verbose or self.verbose or self.progress:
          sys.stderr.write('Requesting job start...\n')
       return self.oozie.start(xml.getvalue())
 
@@ -785,11 +789,11 @@ class Oozie(Client):
       else:
          raise ServiceError(req.status_code,'Cannot list jobs',request=req)
 
-   def submit(self,path,properties=None,workflow=None,copy=[],verbose=False):
+   def submit(self,path,properties=None,workflow=None,copy=[],verbose=False,tracker=None):
 
       job = self.newJob(path,verbose=verbose)
       if workflow is not None:
-         if verbose:
+         if verbose or self.progress:
             sys.stderr.write('Copying workflow.xml to {} ...\n'.format(path))
          job.define_workflow(workflow,overwrite=True)
       for info in copy:
@@ -802,11 +806,33 @@ class Oozie(Client):
             dest = fpath[slash+1] if slash>=0 else fpath
          if type(fpath)==str:
             with open(fpath,'rb') as data:
-               if verbose:
-                  sys.stderr.write('{} → {}\n'.format(fpath,dest))
+               if verbose or self.progress:
+                  if fpath==dest:
+                     sys.stderr.write('→ {}\n'.format(dest))
+                  else:
+                     sys.stderr.write('{} → {}\n'.format(fpath,dest))
                job.copy_resource(data,dest,overwrite=True)
          else:
-            if verbose:
+            if verbose or self.progress:
                sys.stderr.write('<data> → {}\n'.format(dest))
             job.copy_resource(fpath,dest,overwrite=True)
-      return job.start(properties,verbose=verbose)
+      jobid = job.start(properties,verbose=verbose)
+      if self.progress:
+         sys.stderr.write('{} job started.\n'.format(jobid))
+      if tracker is not None:
+         if verbose or self.progress:
+            sys.stderr.write('Requesting tracking of {}\n'.format(jobid))
+         if tracker[-1]=='/':
+            tracker = tracker[0:-1]
+         url = tracker + '/task/track/'
+         track_req = requests.post(
+            url,
+            auth=self.auth(),
+            data=json.dumps({'id' : jobid}),
+            headers={'Content-Type' : 'application/json; charset=UTF-8'},
+            verify=self.verify);
+         if track_req.status_code!=200:
+            raise ServiceError(track_req.status_code,'Cannot track job {} via {}'.format(jobid,url),request=track_req)
+         if self.progress:
+            sys.stderr.write('{} is being tracked.\n'.format(jobid))
+      return jobid
