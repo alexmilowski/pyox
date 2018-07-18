@@ -2,17 +2,19 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: redis-master
+  labels:
+     app: redis
 spec:
   selector:
     matchLabels:
-      app: tracker-service
-      role: redis-master
+      app: redis
+      role: master
   replicas: 1
   template:
     metadata:
       labels:
-        app: tracker-service
-        role: redis-master
+        app: redis
+        role: master
     spec:
       containers:
       - name: master
