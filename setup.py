@@ -76,8 +76,7 @@ setup(
 
     # You can just specify the packages manually here if your project is
     # simple. Or you can use find_packages().
-    packages=['pyhadoopapi','pyhadoopapi.apps.monitor'],
-    #packages=['pyhadoopapi','pyhadoopapi.apps.monitor','pyhadoopapi.apps.monitor.templates','pyhadoopapi.apps.monitor.assets.css','pyhadoopapi.apps.monitor.assets.js'],
+    packages=['pyhadoopapi','pyhadoopapi.apps.monitor', 'pyhadoopapi.apps.tracker'],
     #find_packages(exclude=['contrib', 'docs', 'tests', 'virtualenv']),
 
     # Alternatively, if you want to distribute just a my_module.py, uncomment
@@ -88,7 +87,7 @@ setup(
     # your project is installed. For an analysis of "install_requires" vs pip's
     # requirements files see:
     # https://packaging.python.org/en/latest/requirements.html
-    install_requires=['requests','flask'],
+    install_requires=['requests','flask','redis','cryptography'],
 
     # List additional groups of dependencies here (e.g. development
     # dependencies). You can install these using the following syntax,
