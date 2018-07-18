@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: redis-master
+  labels:
+    app: tracker-service
+    role: redis-master
+spec:
+  ports:
+  - port: 6379
+    targetPort: 6379
+  selector:
+    app: tracker-service
+    role: redis-master

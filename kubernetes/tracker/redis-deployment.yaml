@@ -1,0 +1,42 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: redis-master
+spec:
+  selector:
+    matchLabels:
+      app: tracker-service
+      role: redis-master
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: tracker-service
+        role: redis-master
+    spec:
+      containers:
+      - name: master
+        image: kubernetes/redis:v1
+        resources:
+          requests:
+            cpu: 500m
+            memory: 1Gi
+        ports:
+        - containerPort: 6379
+        env:
+        - name: MASTER
+          value: "true"
+        volumeMounts:
+        - mountPath: /redis-master-data
+          name: data
+        - mountPath: /redis-master
+          name: config
+      volumes:
+        - name: data
+          emptyDir: {}
+        - name: config
+          configMap:
+            name: tracker-redis-config
+            items:
+            - key: redis.conf
+              path: redis.conf

@@ -1,0 +1,12 @@
+{
+   "base" : "https://knox.example.com/",
+   "gateway" : "bigdata",
+   "proxies" : {
+      "http" : "http://myproxy.example.com",
+      "https" : "https://myproxy.example.com"
+   },
+   "verify" : true,
+   "namenode" : "sandbox",
+   "tracker" : "sandbox-nnnnn",
+   "key" : "ZmFHd0dpaTJ4cXY5LVg2TWZFa0Rfdlg2TkJYUkpzNnUyYjhBeEx0LVdZND0="
+}

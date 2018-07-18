@@ -1,0 +1,20 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: test-gateway-conf
+spec:
+  containers:
+    - name: test-gateway-conf-sh
+      image: k8s.gcr.io/busybox
+      command: [ "/bin/sh", "-c", "cat /conf/service.json" ]
+      volumeMounts:
+      - mountPath: /conf
+        name: config
+  volumes:
+    - name: config
+      configMap:
+        name: tracker-config
+        items:
+          - key: service
+            path: service.json
+  restartPolicy: Never

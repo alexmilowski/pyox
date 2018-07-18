@@ -1,0 +1,38 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ws-tracker
+spec:
+  selector:
+    matchLabels:
+      app: tracker-service
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: tracker-service
+    spec:
+      containers:
+      - name: service
+        image: alexmilowski/tracker-service:0.9.3.0004
+        resources:
+          requests:
+            cpu: 2
+            memory: 2Gi
+        ports:
+        - containerPort: 8888
+        env:
+        - name: MY_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+        volumeMounts:
+        - mountPath: /conf
+          name: config
+      volumes:
+        - name: config
+          configMap:
+            name: tracker-config
+            items:
+            - key: service
+              path: service.json
