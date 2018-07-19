@@ -296,3 +296,20 @@ Web Service.  You must have authentication credentials for Knox to use the Web a
 
 Once you have the application running, you can access it at the address you have configured.  By default, this is
 http://localhost:5000/
+
+## Tracker Microservice
+
+The Tracker Microservice will track Oozie jobs via Knox. Often, local policies
+for retention of logs will cause application container logs to disappear before
+a developer can view or inspect them.
+
+The tracker service provides a simple API and UI for tracking jobs via
+Apache Knox. If the fails, it will submit a job to inspect and copy various
+application logs to your home directory
+on HDFS.
+
+The Web UI display the current status of jobs, the cluster, and allows various
+interactions and operations to be perform. Alternatively, the [Tracker API](tracker.md)
+provides a programmatic way to interact with the microservice.
+
+The microservice can be deploy easily on [kubernetes](kubernetes/tracker/).
