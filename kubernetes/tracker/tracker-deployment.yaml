@@ -14,7 +14,7 @@ spec:
     spec:
       containers:
       - name: service
-        image: alexmilowski/tracker-service:0.9.3.0004
+        image: alexmilowski/tracker-service:0.9.3.0006
         resources:
           requests:
             cpu: 2
