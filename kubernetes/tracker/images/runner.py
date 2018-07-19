@@ -29,6 +29,7 @@ logging.config.dictConfig({
 
 # Setup Application
 from pyhadoopapi.apps.tracker.service import create_app, start_task_queue
+from pyhadoopapi import ServiceError
 import json
 import os
 
@@ -44,6 +45,10 @@ with open(conf_file) as json_data:
 
 # Create application and associate with configuration
 app = create_app('tracker_service')
+@app.errorhandler(ServiceError)
+def handle_service_error(e):
+   return e.message, e.status_code
+
 app.config['KNOX'] = conf
 
 # The key is currently a separate dictionary item. If the encryption key does not exist, create it.
