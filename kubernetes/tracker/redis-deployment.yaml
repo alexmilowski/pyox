@@ -20,7 +20,7 @@ spec:
       - name: master
         image: kubernetes/redis:v1
         resources:
-          requests:
+          limits:
             cpu: 500m
             memory: 1Gi
         ports:

@@ -16,9 +16,9 @@ spec:
       - name: service
         image: alexmilowski/tracker-service:0.9.3.0006
         resources:
-          requests:
-            cpu: 2
-            memory: 2Gi
+          limits:
+            cpu: 1
+            memory: 1Gi
         ports:
         - containerPort: 8888
         env:
@@ -39,7 +39,11 @@ spec:
         volumeMounts:
         - mountPath: /conf
           name: config
+        - mountPath: /logs
+          name: logs
       volumes:
+        - name: logs
+          emptyDir: {}
         - name: config
           configMap:
             name: tracker-config
