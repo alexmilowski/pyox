@@ -336,6 +336,17 @@ class custom_params():
       s += '}'
       return s
 
+def argument_property_name(spec):
+   name = None
+   for current in spec:
+      if type(current)!=str:
+         continue
+      current = current.replace('-','_')
+      if current[0:2]=='__':
+         current = current[2:]
+      if name is None or len(current)>len(name):
+         name = current
+   return name
 
 def make_client(kclass,*params,**kwargs):
    args = parse_args(*params,**kwargs)
@@ -359,7 +370,8 @@ def make_client(kclass,*params,**kwargs):
             setattr(arguments,spec,getattr(args,spec))
          else:
             name = spec[-1].get('dest')
-            if name is not None:
-               setattr(arguments,name,getattr(args,name))
+            if name is None:
+               name = argument_property_name(spec)
+            setattr(arguments,name,getattr(args,name))
 
    return client if arguments is None else (client,arguments)
