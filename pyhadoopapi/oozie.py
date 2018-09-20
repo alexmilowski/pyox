@@ -12,6 +12,12 @@ NAMENODE = 'nameNode'
 OOZIE_APP_PATH = 'oozie.wf.application.path'
 _jsonType = 'application/json'
 
+def property_value(workflow,properties,name):
+   value = workflow.properties.get(name) if workflow is not None else None
+   if value is None:
+      value = properties.get(name)
+   return value;
+
 def write_property(xml,name,value):
    xml.write('<property>\n')
    xml.write('<name>')
@@ -125,7 +131,7 @@ class XMLWriter:
                self.start(name).text(value).end()
             self.newline()
 
-   def child(self,value,all=True):
+   def child(self,value,all=True,container=None,wrapper=None,name_value=False):
       if value is not None:
          if type(value)==list:
             if all:
@@ -141,6 +147,26 @@ class XMLWriter:
                else:
                   self.text(str(value[0]))
                   self.newline()
+         elif type(value)==dict:
+            if container is not None:
+               self.start(container)
+               self.newline()
+            for name,value in value.items():
+               if wrapper is not None:
+                  self.start(wrapper)
+                  self.newline()
+               if name_value:
+                  self.named_child('name',name)
+                  self.named_child('value',value)
+               else:
+                  self.named_child(name,value)
+               if wrapper is not None:
+                  self.end()
+                  self.newline()
+            if container is not None:
+               self.end()
+               self.newline()
+
          else:
             if hasattr(value,'to_xml'):
                value.to_xml(self)
@@ -188,16 +214,17 @@ class XMLSerializable:
 
 class Workflow(XMLSerializable):
 
-   def __init__(self,name,start):
+   def __init__(self,name,start,**kwargs):
       self.name = name
       self.start = start
       self.items = {}
       self.credentials = []
       self.end('end')
       self.last_action = None
+      self.properties = kwargs
 
-   def start(name,start):
-      w = Workflow(name,start)
+   def start(name,start,**kwargs):
+      w = Workflow(name,start,**kwargs)
       return w
 
    def end(self,name):
@@ -214,6 +241,8 @@ class Workflow(XMLSerializable):
       if self.last_action is not None:
          self.last_action.targets[0] = name
       self.last_action = self.items[name]
+      if action.workflow is None:
+         action.workflow = self
       return self
 
    def switch(self,name,*cases):
@@ -372,6 +401,7 @@ class Workflow(XMLSerializable):
    def configuration(*items):
       action = XMLSerializable()
       action.items = items
+
       def to_xml(self,xml):
          xml.start('configuration').newline()
          for item in self.items:
@@ -388,43 +418,41 @@ class Workflow(XMLSerializable):
       action.to_xml = types.MethodType(to_xml,action)
       return action
 
-   def map_reduce(job_tracker,name_node,streaming_or_pipes,**kwargs):
+   def map_reduce(streaming_or_pipes,workflow=None,**kwargs):
       action = XMLSerializable()
-      action.job_tracker = job_tracker
-      action.name_node = name_node
-      action.streaming_or_pipes = streaming_or_pipes
+      action.workflow = workflow
       action.properties = kwargs
+      action.streaming_or_pipes = streaming_or_pipes
       def to_xml(self,xml):
          xml.start('map-reduce').newline()
-         xml.named_child('job-tracker',self.job_tracker)
-         xml.named_child('name-node',self.name_node)
+         xml.named_child('job-tracker',property_value(self.workflow,self.properties,'job_tracker'))
+         xml.named_child('name-node',property_value(self.workflow,self.properties,'name_node'))
          xml.child(self.properties.get('prepare'))
          xml.child(self.streaming_or_pipes)
          xml.named_child('job-xml',self.properties.get('job_xml'))
-         xml.child(self.properties.get('configuration'))
+         xml.child(self.properties.get('configuration'),container='configuration',wrapper='property',name_value=True)
          xml.named_child('file',self.properties.get('file'))
          xml.named_child('archive',self.properties.get('archive'))
          xml.end().newline()
       action.to_xml = types.MethodType(to_xml,action)
       return action
 
-   def spark(job_tracker,name_node,master,name,jar,**kwargs):
+   def spark(name,jar,workflow=None,**kwargs):
       action = XMLSerializable()
-      action.job_tracker = job_tracker
-      action.name_node = name_node
-      action.master = master
+      action.workflow = workflow
+      action.properties = kwargs
       action.name = name
       action.jar = jar
       action.properties = kwargs
       def to_xml(self,xml):
          xml.start('spark',{'xmlns':'uri:oozie:spark-action:0.1'}).newline()
-         xml.named_child('job-tracker',self.job_tracker)
-         xml.named_child('name-node',self.name_node)
+         xml.named_child('job-tracker',property_value(self.workflow,self.properties,'job_tracker'))
+         xml.named_child('name-node',property_value(self.workflow,self.properties,'name_node'))
          xml.child(self.properties.get('prepare'))
          xml.named_child('job-xml',self.properties.get('job_xml'))
-         xml.child(self.properties.get('configuration'))
-         xml.named_child('master',self.master)
-         xml.named_child('mode',self.properties.get('mode'))
+         xml.child(self.properties.get('configuration'),container='configuration',wrapper='property',name_value=True)
+         xml.named_child('master',property_value(self.workflow,self.properties,'master'))
+         xml.named_child('mode',property_value(self.workflow,self.properties,'mode'))
          xml.named_child('name',self.name)
          xml.named_child('jar',self.jar)
          xml.named_child('spark-opts',self.properties.get('spark_opts'))
@@ -433,19 +461,18 @@ class Workflow(XMLSerializable):
       action.to_xml = types.MethodType(to_xml,action)
       return action
 
-   def pig(job_tracker,name_node,script,**kwargs):
+   def pig(script,workflow=None,**kwargs):
       action = XMLSerializable()
-      action.job_tracker = job_tracker
-      action.name_node = name_node
-      action.script = script
+      action.workflow = workflow
       action.properties = kwargs
+      action.script = script
       def to_xml(self,xml):
          xml.start('pig').newline()
-         xml.named_child('job-tracker',self.job_tracker)
-         xml.named_child('name-node',self.name_node)
+         xml.named_child('job-tracker',property_value(self.workflow,self.properties,'job_tracker'))
+         xml.named_child('name-node',property_value(self.workflow,self.properties,'name_node'))
          xml.child(self.properties.get('prepare'))
          xml.named_child('job-xml',self.properties.get('job_xml'))
-         xml.child(self.properties.get('configuration'))
+         xml.child(self.properties.get('configuration'),container='configuration',wrapper='property',name_value=True)
          xml.named_child('script',self.script)
          xml.named_child('param',self.properties.get('param'))
          xml.named_child('argument',self.properties.get('argument'))
@@ -455,19 +482,18 @@ class Workflow(XMLSerializable):
       action.to_xml = types.MethodType(to_xml,action)
       return action
 
-   def hive(job_tracker,name_node,script,**kwargs):
+   def hive(script,workflow=None,**kwargs):
       action = XMLSerializable()
-      action.job_tracker = job_tracker
-      action.name_node = name_node
-      action.script = script
+      action.workflow = workflow
       action.properties = kwargs
+      action.script = script
       def to_xml(self,xml):
          xml.start('hive',{'xmlns':'uri:oozie:hive-action:0.3'}).newline()
-         xml.named_child('job-tracker',self.job_tracker)
-         xml.named_child('name-node',self.name_node)
+         xml.named_child('job-tracker',property_value(self.workflow,self.properties,'job_tracker'))
+         xml.named_child('name-node',property_value(self.workflow,self.properties,'name_node'))
          xml.child(self.properties.get('prepare'))
          xml.named_child('job-xml',self.properties.get('job_xml'))
-         xml.child(self.properties.get('configuration'))
+         xml.child(self.properties.get('configuration'),container='configuration',wrapper='property',name_value=True)
          xml.named_child('script',self.script)
          xml.named_child('param',self.properties.get('param'))
          xml.named_child('file',self.properties.get('file'))
@@ -476,20 +502,19 @@ class Workflow(XMLSerializable):
       action.to_xml = types.MethodType(to_xml,action)
       return action
 
-   def hive2(job_tracker,name_node,jdbc_url,script,**kwargs):
+   def hive2(jdbc_url,script,workflow=None,**kwargs):
       action = XMLSerializable()
-      action.job_tracker = job_tracker
-      action.name_node = name_node
+      action.workflow = workflow
+      action.properties = kwargs
       action.jdbc_url = jdbc_url
       action.script = script
-      action.properties = kwargs
       def to_xml(self,xml):
          xml.start('hive2',{'xmlns':'uri:oozie:hive2-action:0.1'}).newline()
-         xml.named_child('job-tracker',self.job_tracker)
-         xml.named_child('name-node',self.name_node)
+         xml.named_child('job-tracker',property_value(self.workflow,self.properties,'job_tracker'))
+         xml.named_child('name-node',property_value(self.workflow,self.properties,'name_node'))
          xml.child(self.properties.get('prepare'))
          xml.named_child('job-xml',self.properties.get('job_xml'))
-         xml.child(self.properties.get('configuration'))
+         xml.child(self.properties.get('configuration'),container='configuration',wrapper='property',name_value=True)
          xml.named_child('jdbc-url',self.jdbc_url)
          xml.named_child('password',self.properties.get('password'))
          xml.named_child('script',self.script)
@@ -501,8 +526,10 @@ class Workflow(XMLSerializable):
       action.to_xml = types.MethodType(to_xml,action)
       return action
 
-   def ssh(host,command,*args,capture_output=False):
+   def ssh(host,command,*args,capture_output=False,workflow=None,**kwargs):
       action = XMLSerializable()
+      action.workflow = workflow
+      action.properties = kwargs
       action.host = host
       action.command = command
       action.args = args
@@ -519,19 +546,18 @@ class Workflow(XMLSerializable):
       action.to_xml = types.MethodType(to_xml,action)
       return action
 
-   def shell(job_tracker,name_node,command,**kwargs):
+   def shell(command,workflow=None,**kwargs):
       action = XMLSerializable()
-      action.job_tracker = job_tracker
-      action.name_node = name_node
-      action.command = command
+      action.workflow = workflow
       action.properties = kwargs
+      action.command = command
       def to_xml(self,xml):
          xml.start('shell',{'xmlns':'uri:oozie:shell-action:0.1'}).newline()
-         xml.named_child('job-tracker',self.job_tracker)
-         xml.named_child('name-node',self.name_node)
+         xml.named_child('job-tracker',property_value(self.workflow,self.properties,'job_tracker'))
+         xml.named_child('name-node',property_value(self.workflow,self.properties,'name_node'))
          xml.child(self.properties.get('prepare'))
          xml.named_child('job-xml',self.properties.get('job_xml'))
-         xml.child(self.properties.get('configuration'))
+         xml.child(self.properties.get('configuration'),container='configuration',wrapper='property',name_value=True)
          xml.named_child('exec',self.command)
          xml.named_child('argument',self.properties.get('argument'))
          xml.named_child('file',self.properties.get('file'))
@@ -542,9 +568,11 @@ class Workflow(XMLSerializable):
       action.to_xml = types.MethodType(to_xml,action)
       return action
 
-   def sub_workflow(app_path,configuration=None,propagate_configuration=False):
+   def sub_workflow(app_path,configuration=None,propagate_configuration=False,workflow=None,**kwargs):
       action = XMLSerializable()
-      action.app_path
+      action.workflow = workflow
+      action.properties = kwargs
+      action.app_path = app_path
       action.configuration = configuration
       action.propagate_configuration = propagate_configuration
       def to_xml(self,xml):
@@ -568,19 +596,18 @@ class Workflow(XMLSerializable):
       action.to_xml = types.MethodType(to_xml,action)
       return action
 
-   def java(job_tracker,name_node,main_class,**kwargs):
+   def java(main_class,workflow=None,**kwargs):
       action = XMLSerializable()
-      action.job_tracker = job_tracker
-      action.name_node = name_node
-      action.main_class = main_class
+      action.workflow = workflow
       action.properties = kwargs
+      action.main_class = main_class
       def to_xml(self,xml):
          xml.start('java').newline()
-         xml.named_child('job-tracker',self.job_tracker)
-         xml.named_child('name-node',self.name_node)
+         xml.named_child('job-tracker',property_value(self.workflow,self.properties,'job_tracker'))
+         xml.named_child('name-node',property_value(self.workflow,self.properties,'name_node'))
          xml.child(self.properties.get('prepare'))
          xml.named_child('job-xml',self.properties.get('job_xml'))
-         xml.child(self.properties.get('configuration'))
+         xml.child(self.properties.get('configuration'),container='configuration',wrapper='property',name_value=True)
          xml.named_child('main-class',self.main_class)
          xml.named_child('java-opts',self.properties.get('java_opts'))
          xml.named_child('arg',self.properties.get('arg'))
