@@ -56,6 +56,14 @@ The tracker service is configured via a JSON file (see `service.json`).  The
 properties identify the base URI of the Knox service, gateway name, name node,
 tracker node, and various HTTP parameters (proxies and certificate verification).
 
+You'll need to generate a unique key for encrypting data in Redis:
+
+```python
+from cryptography.fernet import Fernet
+key = Fernet.generate_key()
+```
+and use that in the `service.json` file.
+
 Modify the service.json file as necessary to reflect how you connect to Knox
 and then create the configuration and check it via:
 
