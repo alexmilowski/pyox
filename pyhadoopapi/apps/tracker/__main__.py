@@ -40,6 +40,15 @@ else:
    #print('Loading from {}'.format(value))
    app.config.from_envvar('WEB_CONF')
 
+if app.config.get('KEY') is None:
+   key = app.config.get('KNOX').get('key')
+   if key is None:
+      from cryptography.fernet import Fernet, base64
+      key = base64.b64encode(Fernet.generate_key()).decode('utf-8')
+      print('Key generated:')
+      print(key)
+   app.config['KEY'] = key
+
 if __name__ == '__main__':
    start_task_queue(app)
    app.run()
