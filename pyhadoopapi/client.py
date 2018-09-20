@@ -367,7 +367,8 @@ def make_client(kclass,*params,**kwargs):
       arguments = custom_params()
       for spec in argument_specs:
          if type(spec)==str:
-            setattr(arguments,spec,getattr(args,spec))
+            name = argument_property_name([spec])
+            setattr(arguments,name,getattr(args,name))
          else:
             name = spec[-1].get('dest')
             if name is None:
