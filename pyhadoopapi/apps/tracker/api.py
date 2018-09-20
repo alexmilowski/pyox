@@ -119,20 +119,21 @@ def invoke_application_log_copy(oozie,redis,parent_id,action_id,username,verbose
    confid = str(uuid4())
    logdir = '/user/'+username+'/WORK/logs'
    path = logdir + '/' + confid
-   workflow = \
-      Workflow.start('shell-'+action_id,'shell') \
-         .action(
-            'shell',
-            Workflow.shell(
-               'sandbox-RMS:8032','hdfs://sandbox',
-               'copy.sh',
-               configuration=Workflow.configuration({
-                  'mapred.job.queue.name' : 'HQ_IST'
-               }),
-               argument=[logdir,parent_id,'application_'+action_id],
-               file=path+'/copy.sh'
-            )
-         ).kill('error','Cannot run copy workflow')
+   workflow = Workflow.start(
+      'shell-'+action_id,'shell',
+      job_tracker='sandbox-RMS:8032',
+      name_node='hdfs://sandbox'
+   ).action(
+      'shell',
+      Workflow.shell(
+         'copy.sh',
+         configuration={
+            'mapred.job.queue.name' : 'HQ_IST'
+         },
+         argument=[logdir,parent_id,'application_'+action_id],
+         file=path+'/copy.sh'
+      )
+   ).kill('error','Cannot run copy workflow')
    if verbose:
       print(str(workflow))
 
