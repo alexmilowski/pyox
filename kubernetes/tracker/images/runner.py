@@ -28,8 +28,8 @@ logging.config.dictConfig({
 })
 
 # Setup Application
-from pyhadoopapi.apps.tracker.service import create_app, start_task_queue
-from pyhadoopapi import ServiceError
+from pyox.apps.tracker.service import create_app, start_task_queue
+from pyox import ServiceError
 import json
 import os
 

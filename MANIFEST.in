@@ -3,10 +3,10 @@ include LICENSE.txt
 
 # Include the data files
 
-include pyhadoopapi/apps/monitor/templates/*.html
-include pyhadoopapi/apps/monitor/assets/css/*.css
-include pyhadoopapi/apps/monitor/assets/js/*.js
+include pyox/apps/monitor/templates/*.html
+include pyox/apps/monitor/assets/css/*.css
+include pyox/apps/monitor/assets/js/*.js
 
-include pyhadoopapi/apps/tracker/templates/*.html
-include pyhadoopapi/apps/tracker/assets/css/*.css
-include pyhadoopapi/apps/tracker/assets/js/*.js
+include pyox/apps/tracker/templates/*.html
+include pyox/apps/tracker/assets/css/*.css
+include pyox/apps/tracker/assets/js/*.js

@@ -14,7 +14,7 @@ A simple command-line client allows you to access Knox over the gateway.
 The command-line client can be run by:
 
 ```
-python -m pyhadoopapi
+python -m pyox
 ```
 
 Currently, there are two commands supported:
@@ -42,7 +42,7 @@ scheme (e.g., `https`) and the proxy url.
 ### hdfs commands
 
 ```bash
-python -m pyhadoopapi hdfs *command* ...
+python -m pyox hdfs *command* ...
 ```
 
 #### hdfs cat
@@ -50,7 +50,7 @@ python -m pyhadoopapi hdfs *command* ...
 Outputs the file paths to stdout.
 
 ```bash
-python -m pyhadoopapi hdfs cat [--offset N] [--length N] path ...
+python -m pyox hdfs cat [--offset N] [--length N] path ...
 ```
 
 Options:
@@ -64,7 +64,7 @@ Options:
 Outputs the file paths to stdout.
 
 ```bash
-python -m pyhadoopapi hdfs download [-v] [--chunk-size N] [-o file] file
+python -m pyox hdfs download [-v] [--chunk-size N] [-o file] file
 ```
 
 Options:
@@ -77,7 +77,7 @@ Options:
 A directory or file listing.
 
 ```bash
-python -m pyhadoopapi hdfs ls [-b] [-l] path ...
+python -m pyox hdfs ls [-b] [-l] path ...
 ```
 
 Options:
@@ -90,7 +90,7 @@ Options:
 Create directories
 
 ```bash
-python -m pyhadoopapi hdfs mkdir path ...
+python -m pyox hdfs mkdir path ...
 ```
 
 #### hdfs mv
@@ -98,7 +98,7 @@ python -m pyhadoopapi hdfs mkdir path ...
 Move a file
 
 ```bash
-python -m pyhadoopapi hdfs mv source destination
+python -m pyox hdfs mv source destination
 ```
 
 #### hdfs rm
@@ -106,7 +106,7 @@ python -m pyhadoopapi hdfs mv source destination
 Move a file
 
 ```bash
-python -m pyhadoopapi hdfs rm [-r] path ...
+python -m pyox hdfs rm [-r] path ...
 ```
 
 Options:
@@ -119,13 +119,13 @@ Options:
 Copy a set of files/direcrories to the target destination.
 
 ```bash
-python -m pyhadoopapi hdfs upload [-f] [-r] [-s] [-v] source ... destination/
+python -m pyox hdfs upload [-f] [-r] [-s] [-v] source ... destination/
 ```
 
 Copy a single file to a destination.
 
 ```bash
-python -m pyhadoopapi hdfs upload [-f] [-s] [-v] source destination
+python -m pyox hdfs upload [-f] [-s] [-v] source destination
 ```
 
 Options:
@@ -144,7 +144,7 @@ Options:
  * `status` - show the job status
 
  ```
- python -m pyhadoopapi oozie ls -h
+ python -m pyox oozie ls -h
  ```
 
  To start jobs on oozie you can:
@@ -203,7 +203,7 @@ same parameters (all keywords)
 A simple HDFS client example:
 
 ```python
-from pyhadoopapi import WebHDFS
+from pyox import WebHDFS
 hdfs = WebHDFS(base='https://knox.example.com/',gateway='bigdata',username='jane',password='xyzzy')
 if not hdfs.make_directory('/user/bob/data/'):
    print('Can not make directory!')
@@ -222,7 +222,7 @@ There are three main API classes:
 A workflow for a job can be constructed by a DSL.  For example, a simple shell action to copy yarn logs:
 
 ```python
-from pyhadoopapi import Oozie, Workflow
+from pyox import Oozie, Workflow
 from io import StringIO
 
 # create the oozie client
@@ -271,7 +271,7 @@ A simple flask application can provide a web UI and proxy to the cluster informa
 application can be run by:
 
 ```
-python -m pyhadoopapi.apps.monitor conf
+python -m pyox.apps.monitor conf
 ```
 
 where `conf.py` is in your python import path and contains the application configuration.  Alternatively, you

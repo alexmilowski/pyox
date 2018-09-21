@@ -18,7 +18,7 @@ https://github.com/alexmilowski/python-hadoop-rest-api
 
 import re
 vdir = __file__[0:__file__.rfind('/')]+'/' if __file__.rfind('/')>=0 else ''
-with open(vdir+'pyhadoopapi/__init__.py', 'rt') as vfile:
+with open(vdir+'pyox/__init__.py', 'rt') as vfile:
    verstrline = vfile.read()
    VSRE = r"^__version__ = ['\"]([^'\"]*)['\"]"
    mo = re.search(VSRE, verstrline, re.M)
@@ -28,7 +28,7 @@ with open(vdir+'pyhadoopapi/__init__.py', 'rt') as vfile:
       raise RuntimeError("Unable to find version string in %s." % (VERSIONFILE,))
 
 setup(
-    name='pyhadoopapi',
+    name='pyox',
 
     # Versions should comply with PEP440.  For a discussion on single-sourcing
     # the version across setup.py and the project code, see
@@ -76,7 +76,7 @@ setup(
 
     # You can just specify the packages manually here if your project is
     # simple. Or you can use find_packages().
-    packages=['pyhadoopapi','pyhadoopapi.apps.monitor', 'pyhadoopapi.apps.tracker'],
+    packages=['pyox','pyox.apps.monitor', 'pyox.apps.tracker'],
     #find_packages(exclude=['contrib', 'docs', 'tests', 'virtualenv']),
 
     # Alternatively, if you want to distribute just a my_module.py, uncomment

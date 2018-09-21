@@ -2,7 +2,7 @@ FROM python:3.6
 
 MAINTAINER Alex Miłowski <alex@milowski.com>
 
-RUN pip install gunicorn Flask requests redis cryptography pyhadoopapi
+RUN pip install gunicorn Flask requests redis cryptography pyox
 RUN mkdir /logs
 RUN mkdir /service
 COPY gunicorn.conf /gunicorn.conf
