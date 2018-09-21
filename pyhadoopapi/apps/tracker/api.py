@@ -163,20 +163,28 @@ yarn logs -applicationId $3 | hdfs dfs -put - $1/$2/$3.log
 
 service_api = Blueprint('service_api',__name__)
 
+def nocache_headers():
+   return {
+      'Last-Modified' : datetime.now(),
+      'Cache-Control' : 'no-store, no-cache, must-revalidate, post-check=0, pre-check=0, max-age=0',
+      'Pragma' : 'no-cache',
+      'Expires' : '-1'
+   }
+
 def error_response(status_code,message,**kwargs):
    obj = {'message':message,'status_code':status_code}
    for name in kwargs:
       obj[name] = kwargs[name]
+   headers = nocache_headers()
    if status_code==401:
-      headers = {'WWW-Authenticate':'Basic realm="KNOX Credentials"'}
-   else:
-      headers = {}
+      headers['WWW-Authenticate'] = 'Basic realm="KNOX Credentials"'
    return Response(status=status_code,response=json.dumps(obj)+'\n',mimetype='application/json; charset=utf-8',headers=headers)
 
 def api_response(status_code,obj,**kwargs):
    for name in kwargs:
       obj[name] = kwargs[name]
-   return Response(status=status_code,response=json.dumps(obj)+'\n',mimetype='application/json; charset=utf-8')
+   headers = nocache_headers()
+   return Response(status=status_code,response=json.dumps(obj)+'\n',mimetype='application/json; charset=utf-8',headers=headers)
 
 def request_job_ids():
    content_type = request.headers['content-type']
