@@ -1,12 +1,12 @@
 from flask import Flask, current_app, request
 from redis import Redis
-from pyhadoopapi.apps.tracker.views import service_ui
-from pyhadoopapi.apps.tracker.views import assets
-from pyhadoopapi.apps.tracker.api import service_api, get_oozie_client, invoke_application_log_copy, application_ids, set_property, get_property, error_response
+from pyox.apps.tracker.views import service_ui
+from pyox.apps.tracker.views import assets
+from pyox.apps.tracker.api import service_api, get_oozie_client, invoke_application_log_copy, application_ids, set_property, get_property, error_response
 
-from pyhadoopapi.apps.tracker.tasks import task_list, task_get, task_lock, task_unlock, task_authenticate, task_authentication, task_delete, task_set_property, task_create
-from pyhadoopapi.apps.monitor.api import cluster_api
-from pyhadoopapi import ServiceError
+from pyox.apps.tracker.tasks import task_list, task_get, task_lock, task_unlock, task_authenticate, task_authentication, task_delete, task_set_property, task_create
+from pyox.apps.monitor.api import cluster_api
+from pyox import ServiceError
 
 
 

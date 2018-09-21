@@ -1,6 +1,6 @@
-from pyhadoopapi.oozie import Oozie, Workflow
-from pyhadoopapi.webhdfs import WebHDFS
-from pyhadoopapi.client import ServiceError
+from pyox.oozie import Oozie, Workflow
+from pyox.webhdfs import WebHDFS
+from pyox.client import ServiceError
 import argparse
 import json
 
@@ -19,7 +19,7 @@ def merge_properties(property_files,properties):
 
 
 def submit_command(args):
-   cmdparser = argparse.ArgumentParser(prog='pyhadoopapi submit',description='submit action')
+   cmdparser = argparse.ArgumentParser(prog='pyox submit',description='submit action')
    cmdparser.add_argument('path')
    cmdparser.add_argument('action',choices=['map-reduce','pig','fs','java','spark','workflow','hive','hive2'])
    cmdparser.add_argument(

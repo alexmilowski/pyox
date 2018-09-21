@@ -10,9 +10,9 @@ from uuid import uuid4
 from io import StringIO
 from datetime import datetime
 
-from pyhadoopapi.apps.tracker.tasks import task_authenticate, task_create
+from pyox.apps.tracker.tasks import task_authenticate, task_create
 
-from pyhadoopapi import ServiceError, ClusterInformation, Oozie, Workflow
+from pyox import ServiceError, ClusterInformation, Oozie, Workflow
 
 job_update_expiry = 60
 

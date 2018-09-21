@@ -1,5 +1,5 @@
-from pyhadoopapi.client import Client, ServiceError, response_data
-from pyhadoopapi.webhdfs import WebHDFS
+from pyox.client import Client, ServiceError, response_data
+from pyox.webhdfs import WebHDFS
 from io import StringIO
 from enum import auto,Enum
 import sys

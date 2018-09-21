@@ -1,5 +1,5 @@
-from pyhadoopapi.webhdfs import WebHDFS
-from pyhadoopapi.client import ServiceError
+from pyox.webhdfs import WebHDFS
+from pyox.client import ServiceError
 from datetime import datetime
 import argparse
 import sys
@@ -17,7 +17,7 @@ class tracker:
       self.values.add(value)
 
 def hdfs_ls_command(client,argv):
-   lsparser = argparse.ArgumentParser(prog='pyhadoopapi hdfs ls',description="ls")
+   lsparser = argparse.ArgumentParser(prog='pyox hdfs ls',description="ls")
    lsparser.add_argument(
       '-b',
       action='store_true',
@@ -74,7 +74,7 @@ def hdfs_ls_command(client,argv):
          print(fspec.format(name,fsize,modtime.isoformat()))
 
 def hdfs_cat_command(client,argv):
-   catparser = argparse.ArgumentParser(prog='pyhadoopapi hdfs cat',description="cat")
+   catparser = argparse.ArgumentParser(prog='pyox hdfs cat',description="cat")
    catparser.add_argument(
       '--offset',
       type=int,
@@ -96,7 +96,7 @@ def hdfs_cat_command(client,argv):
          sys.stdout.buffer.write(chunk)
 
 def hdfs_download_command(client,argv):
-   dlparser = argparse.ArgumentParser(prog='pyhadoopapi hdfs download',description="download")
+   dlparser = argparse.ArgumentParser(prog='pyox hdfs download',description="download")
    dlparser.add_argument(
       '--chunk-size',
       dest='chunk_size',
@@ -170,7 +170,7 @@ def hdfs_mv_command(client,argv):
       raise ServiceError(403,'Move failed: {} → {}'.format(argv[0],argv[1]))
 
 def hdfs_rm_command(client,argv):
-   rmparser = argparse.ArgumentParser(prog='pyhadoopapi hdfs rm',description="rm")
+   rmparser = argparse.ArgumentParser(prog='pyox hdfs rm',description="rm")
    rmparser.add_argument(
       '-r',
       action='store_true',
@@ -224,7 +224,7 @@ def copy_to_destination(client,source,destpath,verbose=False,force=False):
 
 
 def hdfs_cp_command(client,argv):
-   cpparser = argparse.ArgumentParser(prog='pyhadoopapi hdfs cp',description="cp")
+   cpparser = argparse.ArgumentParser(prog='pyox hdfs cp',description="cp")
    cpparser.add_argument(
       '-f',
       action='store_true',

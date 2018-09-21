@@ -1,5 +1,5 @@
 
-from pyhadoopapi.apps.tracker.service import create_app, start_task_queue
+from pyox.apps.tracker.service import create_app, start_task_queue
 import sys
 import os
 import logging

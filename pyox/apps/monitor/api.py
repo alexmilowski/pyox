@@ -1,7 +1,7 @@
 from flask import Blueprint, g, current_app, request, Response
 import json
 
-from pyhadoopapi import ServiceError, ClusterInformation
+from pyox import ServiceError, ClusterInformation
 
 def get_cluster_client():
    conf = current_app.config.get('KNOX')

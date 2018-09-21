@@ -1,4 +1,4 @@
-from pyhadoopapi.client import Client, ServiceError, response_data
+from pyox.client import Client, ServiceError, response_data
 from io import StringIO
 import sys
 

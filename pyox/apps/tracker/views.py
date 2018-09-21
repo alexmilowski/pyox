@@ -1,7 +1,7 @@
 from flask import Blueprint, render_template, Response, current_app, send_from_directory
 
-from pyhadoopapi import ServiceError
-from pyhadoopapi.apps.tracker.api import get_cluster_client, error_response
+from pyox import ServiceError
+from pyox.apps.tracker.api import get_cluster_client, error_response
 from datetime import datetime
 
 service_ui = Blueprint('service_ui',__name__,template_folder='templates')

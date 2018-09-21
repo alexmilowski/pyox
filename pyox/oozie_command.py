@@ -1,5 +1,5 @@
-from pyhadoopapi.oozie import Oozie
-from pyhadoopapi.client import ServiceError
+from pyox.oozie import Oozie
+from pyox.client import ServiceError
 import argparse
 import sys
 import os
@@ -7,7 +7,7 @@ import json
 from datetime import datetime
 
 def oozie_start_command(client,argv):
-   cmdparser = argparse.ArgumentParser(prog='pyhadoopapi oozie start',description='start')
+   cmdparser = argparse.ArgumentParser(prog='pyox oozie start',description='start')
    cmdparser.add_argument(
       '-p','--property',
       dest='property',
@@ -101,7 +101,7 @@ def message(action):
    message  = action.get('errorMessage')
    return code + ': ' + message if code is not None else ''
 def oozie_status_command(client,argv):
-   cmdparser = argparse.ArgumentParser(prog='pyhadoopapi oozie status',description='job status')
+   cmdparser = argparse.ArgumentParser(prog='pyox oozie status',description='job status')
    cmdparser.add_argument(
       '-r','--raw',
       action='store_true',
@@ -207,7 +207,7 @@ def oozie_status_command(client,argv):
                raise
 
 def oozie_ls_command(client,argv):
-   cmdparser = argparse.ArgumentParser(prog='pyhadoopapi oozie status',description='job status')
+   cmdparser = argparse.ArgumentParser(prog='pyox oozie status',description='job status')
    cmdparser.add_argument(
       '-a',
       action='store_true',

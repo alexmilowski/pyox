@@ -1,11 +1,11 @@
-from pyhadoopapi.cluster import ClusterInformation
-from pyhadoopapi.client import ServiceError
+from pyox.cluster import ClusterInformation
+from pyox.client import ServiceError
 from datetime import datetime
 import argparse
 import json
 
 def cluster_info_command(client,argv):
-   cmdparser = argparse.ArgumentParser(prog='pyhadoopapi cluster info',description='info')
+   cmdparser = argparse.ArgumentParser(prog='pyox cluster info',description='info')
    cmdparser.add_argument(
       '-r',
       action='store_true',
@@ -111,7 +111,7 @@ metrics_labels = {
 }
 
 def cluster_metrics_command(client,argv):
-   cmdparser = argparse.ArgumentParser(prog='pyhadoopapi cluster metrics',description='metrics')
+   cmdparser = argparse.ArgumentParser(prog='pyox cluster metrics',description='metrics')
    cmdparser.add_argument(
       '-r',
       action='store_true',
@@ -167,7 +167,7 @@ def print_queue(depth,queueInfo,show_users=False):
 
 
 def cluster_scheduler_command(client,argv):
-   cmdparser = argparse.ArgumentParser(prog='pyhadoopapi cluster scheduler',description='scheduler')
+   cmdparser = argparse.ArgumentParser(prog='pyox cluster scheduler',description='scheduler')
    cmdparser.add_argument(
       '-r',
       action='store_true',

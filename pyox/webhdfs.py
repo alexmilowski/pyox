@@ -1,5 +1,5 @@
 
-from pyhadoopapi.client import Client, ServiceError
+from pyox.client import Client, ServiceError
 
 def absolute_path(path):
    if len(path)>0 and path[0]!='/':

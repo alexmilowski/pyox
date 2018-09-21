@@ -1,5 +1,5 @@
-from pyhadoopapi.oozie import Oozie
-from pyhadoopapi.client import ServiceError
+from pyox.oozie import Oozie
+from pyox.client import ServiceError
 from datetime import datetime
 import argparse
 import sys
@@ -13,7 +13,7 @@ from requests.exceptions import ProxyError
 from .hdfs_command import hdfs_command
 from .oozie_command import oozie_command
 from .cluster_command import cluster_command
-from pyhadoopapi.submit_command import submit_command
+from pyox.submit_command import submit_command
 
 def handle_error(err,verbose=False):
    if err.status_code==401:
@@ -58,7 +58,7 @@ commands = {
 }
 
 def main():
-   parser = argparse.ArgumentParser(prog='pyhadoopapi',description="KNOX Client")
+   parser = argparse.ArgumentParser(prog='pyox',description="KNOX Client")
 
    parser.add_argument(
         '--base',
