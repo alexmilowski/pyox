@@ -14,6 +14,8 @@ from pyhadoopapi.apps.tracker.tasks import task_authenticate, task_create
 
 from pyhadoopapi import ServiceError, ClusterInformation, Oozie, Workflow
 
+job_update_expiry = 60
+
 # expire in 24 hours
 REDIS_EXPIRES = 24*60*60
 
@@ -200,9 +202,17 @@ def request_job_ids():
    return ids
 
 def get_job_summary(redis,job_id):
+
+   logger = logging.getLogger(__name__)
+
    job_summary = get_object(redis,job_id)
    if job_summary is None:
       return None
+
+   last_checked = job_summary.get('last-checked')
+   if last_checked is None or (datetime.now()-datetime.strptime(last_checked,'%Y-%m-%dT%H:%M:%S.%f')).seconds>job_update_expiry:
+      logger.info('{} is out of date, updating from {}'.format(job_id,last_checked))
+      update_job_summary(redis,job_id)
    raw_app_ids = job_summary.get('application-ids')
    if raw_app_ids is not None:
       job_summary['application-ids'] = json.loads(raw_app_ids)
@@ -224,6 +234,19 @@ def stop_tracking(redis,oozie_id):
    redis.hdel(TRACKING_KEY,oozie_id)
    redis.expire(TRACKING_KEY,REDIS_EXPIRES)
 
+def update_job_summary(redis,job_id):
+   client = get_oozie_client(current_app,username=request.authorization.username if request.authorization is not None else None,password=request.authorization.password if request.authorization is not None else None)
+   info = client.status(job_id)
+   status = info.get('status')
+   app_ids = application_ids(info)
+   set_property(redis,job_id,'status',status)
+   set_property(redis,job_id,'last-checked',datetime.now().isoformat())
+   set_property(redis,job_id,'application-ids',json.dumps(app_ids))
+   return {
+      'id' : job_id,
+      'status' : status,
+      'applications-ids' : app_ids
+   }
 
 @service_api.route('/task/track/',methods=['POST'])
 def service_track_job():
@@ -235,8 +258,6 @@ def service_track_job():
    if ids is None:
       return error_response(400,'Unrecognized content type: '+request.headers['content-type'])
 
-   client = get_oozie_client(current_app,username=request.authorization.username if request.authorization is not None else None,password=request.authorization.password if request.authorization is not None else None)
-
    logger = logging.getLogger(__name__)
 
    summaries = []
@@ -245,17 +266,14 @@ def service_track_job():
       task_id = task_create(redis,access=auth,type='track',oozie=oozie_id)
       tracking(redis,oozie_id)
       logger.info('Tracking {}, task {}'.format(oozie_id,task_id))
-      info = client.status(oozie_id)
-      status = info.get('status')
-      app_ids = application_ids(info)
-      set_property(redis,oozie_id,'status',status)
-      set_property(redis,oozie_id,'application-ids',json.dumps(app_ids))
-      summary = {
-         'id' : oozie_id,
-         'status' : status,
-         'applications-ids' : app_ids
-      }
-      summaries.append(summary)
+      try:
+         summary = update_job_summary(redis,oozie_id)
+         summaries.append(summary)
+      except ServiceError as err:
+         if err.status_code==404:
+            logger.info('Job {job} does not exist, ignoring.'.format(job=oozie_id))
+         else:
+            raise err
    return api_response(200,summaries)
 
 def create_log_dir(client):
@@ -528,10 +546,18 @@ def service_tracking_jobs():
    for job_id in job_ids:
       if len(job_id)==0:
          continue
-      job_summary = get_job_summary(redis,job_id)
-      if job_summary is None:
-         stop_tracking(redis,job_id)
-         continue
+      try:
+         job_summary = get_job_summary(redis,job_id)
+         if job_summary is None:
+            stop_tracking(redis,job_id)
+            continue
+      except ServiceError as err:
+         if err.status_code==404:
+            logger.info('Job {job} no longer exists, removing from tracking.'.format(job=job_id))
+            stop_tracking(redis,job_id)
+            continue
+         else:
+            raise err
       job_summary['id'] = job_id
       app_ids = job_summary.get('application-ids') if job_summary is not None else None
       status = job_summary.get('status') if job_summary is not None else None
