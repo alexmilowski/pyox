@@ -8,6 +8,15 @@ function updateTracking(data) {
          `<tr><td colspan='4'>No jobs are being tracked (${d.toISOString()}).</td></tr>`
       )
    }
+   data.sort(function (a,b) {
+      if (a["last-checked"] > b["last-checked"]) {
+         return -1
+      }
+      if (a["last-checked"] < b["last-checked"]) {
+         return 1
+      }
+      return 0;
+   });
    for (info of data) {
       apps = "";
       logs = "";
