@@ -34,8 +34,39 @@ if __name__ == '__main__':
 app = create_app('dataplatform_app')
 value = os.environ.get('WEB_CONF')
 if value is None:
+   import argparse
+   parser = argparse.ArgumentParser(prog='pyox.apps.tracker',description="PyOX Tracker Service")
+
+   parser.add_argument(
+        'config',
+        help="The configuration file.")
+   parser.add_argument(
+        '--redis',
+        nargs="?",
+        help="The redis server (may include port)")
+   parser.add_argument(
+        '--servername',
+        nargs="?",
+        default='0.0.0.0:5000',
+        help="The server bind name (may include port)")
+
+   args = parser.parse_args()
+
    #print('Loading from {}'.format(sys.argv[1]))
-   app.config.from_object(sys.argv[1])
+   if args.config[-5:]=='.json':
+      with open(args.config) as json_data:
+         import json
+         conf = json.load(json_data)
+      app.config['KNOX'] = conf
+      app.config['KEY'] = conf.get('key')
+      app.config['REDIS_HOST'] = conf.get('redis')
+   else:
+      app.config.from_object(args.config)
+   if args.redis is not None:
+      app.config['REDIS_HOST'] = args.redis
+   if args.servername is not None:
+      app.config['SERVER_NAME'] = args.servername
+
 else:
    #print('Loading from {}'.format(value))
    app.config.from_envvar('WEB_CONF')
