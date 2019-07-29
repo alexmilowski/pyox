@@ -1,4 +1,4 @@
-from pyhadoopapi import Workflow
+from pyox import Workflow
 w = Workflow.start('spark-test','spark') \
       .action(
          'spark',

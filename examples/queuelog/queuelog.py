@@ -1,4 +1,4 @@
-from pyhadoopapi import ClusterInformation, ServiceError
+from pyox import ClusterInformation, ServiceError
 import argparse
 import sys
 import signal

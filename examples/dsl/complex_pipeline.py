@@ -1,4 +1,4 @@
-from pyhadoopapi import Oozie,Workflow,make_client
+from pyox import Oozie,Workflow,make_client
 import argparse
 
 params = None
