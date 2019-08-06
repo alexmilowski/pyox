@@ -82,6 +82,7 @@ class Client:
       self.verify = True
       self.verbose = False
       self.progress = False
+      self.negotiate = False
 
    def enable_verbose(self):
       self.verbose = True;
@@ -117,7 +118,11 @@ class Client:
 
    def auth(self):
       if self.bearer_auth is None:
-         return HTTPBasicAuth(self.username,self.password) if self.username is not None else None
+         if self.negotiate:
+            from requests_negotiate import HTTPNegotiateAuth
+            return HTTPNegotiateAuth()
+         else:
+            return HTTPBasicAuth(self.username,self.password) if self.username is not None else None
       else:
          return None
 
@@ -223,6 +228,11 @@ def parse_args(*params,**kwargs):
         action='store_true',
         default=False,
         help="Use TLS transport (https)")
+   parser.add_argument(
+        '--negotiate',
+        action='store_true',
+        default=False,
+        help="Use HTTP Negotiate authentication (RFC 4559)")
    parser.add_argument(
         '--gateway',
         nargs="?",
@@ -356,6 +366,7 @@ def make_client(kclass,*params,**kwargs):
    client.progress = args.progress
    if args.verbose:
       client.enable_verbose()
+   client.negotiate = args.negotiate
    customizer = kwargs.get('customizer')
    if customizer is not None:
       if type(customizer)!=FunctionType:
